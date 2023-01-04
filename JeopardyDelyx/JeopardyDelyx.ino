@@ -32,9 +32,17 @@ static void flashWinner(int p, int blinks) {
   }
 }
 
+static int readRedButton() {
+  return digitalRead(RED_BUTTON_PIN);
+}
+
+static int readGreenButton() {
+  return digitalRead(GREEN_BUTTON_PIN);
+}
+
 static void waitForReset() {
   int i = 0;
-  while (!digitalRead(GREEN_BUTTON_PIN) && !digitalRead(RED_BUTTON_PIN)) {
+  while (!readRedButton() && !readGreenButton()) {
     int k = i % 6;
     if (k >= 4) {
       k = 6 - k;
@@ -286,13 +294,13 @@ void loop() {
       }
     }
   } else {
-    canReset |= ((!digitalRead(GREEN_BUTTON_PIN) << GREEN_BUTTON_PIN) | (!digitalRead(RED_BUTTON_PIN) << RED_BUTTON_PIN));
+    canReset |= ((!readGreenButton() << GREEN_BUTTON_PIN) | (!readRedButton() << RED_BUTTON_PIN));
     Serial.println(canReset);
-    if ((canReset & GREEN_MASK) && digitalRead(GREEN_BUTTON_PIN)) {
+    if ((canReset & GREEN_MASK) && readGreenButton()) {
       playWinSound();
       flashWinner(activePlayer, 10);
       resetGameCycle("Win");
-    } else if ((canReset & RED_MASK) && digitalRead(RED_BUTTON_PIN)) {
+    } else if ((canReset & RED_MASK) && readRedButton()) {
       playLoseSound();
       resetGameCycle("Lose");
     }
