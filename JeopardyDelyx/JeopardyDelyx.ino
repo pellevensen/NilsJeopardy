@@ -5,12 +5,15 @@ static const int PLAYER_BUTTON_PINS[] = { 9, 11, 5, 7 };
 static const int AUDIO_PIN = 6;
 static const int GREEN_BUTTON_PIN = 4;
 static const int RED_BUTTON_PIN = 2;
+static const int GREEN_MASK = 1 << GREEN_BUTTON_PIN;
+static const int RED_MASK = 1 << RED_BUTTON_PIN;
 static const int NO_PLAYER = -1;
 
 static uint32_t lampCtr;
 static uint32_t rs;
 static int activePlayer;
 static int canPlay;
+static int canReset;
 static Volume vol;
 
 static void lightsOut() {
@@ -21,7 +24,7 @@ static void lightsOut() {
 
 static void flashWinner(int p, int blinks) {
   lightsOut();
-  for(int i = 0; i < blinks; i++) {
+  for (int i = 0; i < blinks; i++) {
     digitalWrite(LAMP_PINS[p], 0);
     delay(100);
     digitalWrite(LAMP_PINS[p], 1);
@@ -29,8 +32,21 @@ static void flashWinner(int p, int blinks) {
   }
 }
 
+static void waitForReset() {
+    int i = 0;
+  while (!digitalRead(GREEN_BUTTON_PIN) && !digitalRead(RED_BUTTON_PIN)) {
+    int k = i % 6;
+    if (k >= 4) {
+      k = 6 - k;
+    }
+    digitalWrite(LAMP_PINS[k], 0);
+    delay(100);
+    digitalWrite(LAMP_PINS[k], 1);
+    i++;
+  }
+}
+
 void setup() {
-  // declare the ledPin as an OUTPUT:
   Serial.begin(9600);
   for (int i = 0; i < sizeof(LAMP_PINS) / sizeof(int); i++) {
     pinMode(LAMP_PINS[i], OUTPUT);
@@ -44,14 +60,11 @@ void setup() {
   pinMode(RED_BUTTON_PIN, INPUT);
 
   activePlayer = NO_PLAYER;
+  canPlay = 0;
+  canReset = 0;
   lampCtr = 0;
-  while (!digitalRead(GREEN_BUTTON_PIN) && !digitalRead(RED_BUTTON_PIN)) {
-    for (int i = 0; i < sizeof(LAMP_PINS) / sizeof(int); i++) {
-      digitalWrite(LAMP_PINS[i], 0);
-      delay(50);
-      digitalWrite(LAMP_PINS[i], 1);
-    }
-  }
+
+  waitForReset();
   playWinSound();
   lightsOut();
 }
@@ -80,56 +93,62 @@ static inline void fadeLamps() {
 }
 
 void closeEncounter(byte type) {
-  int frequencies[5] = { 392, 440, 349, 175, 262 };  // Notes: G4, A4, F4, F3, C4
+  int frequencies[5] = { 392, 440, 349, 175, 262 };
 
-  for (int lev = 255; lev > 0; lev -= 55) {  // Reduce volume by ~20% each time we loop
+  for (int lev = 255; lev > 0; lev -= 55) {
     Serial.print("Volume: ");
     Serial.print((float(lev) / float(255)) * 100);
     Serial.println("%");
-    for (byte freq = 0; freq < 5; freq++) {               // Play through the notes
-      vol.tone(frequencies[freq] * 2, type + freq, lev);  // Start the voice at [freq] Hz, waveform [type], at volume [lev]
-      vol.delay(200);                                     // use Volume delay during sound // Seems to hang!
+    for (byte freq = 0; freq < 5; freq++) {
+      vol.tone(frequencies[freq] * 2, type + freq, lev);
+      vol.delay(200);
     }
-    //vol.delay(100);
-    vol.noTone();  // end voice
+    vol.noTone();
     delay(100);
   }
   Serial.println();
 }
 
 static void playerSound1() {
-  int frequencies[5] = { 392, 440, 349, 175, 262 };  // Notes: G4, A4, F4, F3, C4
+  int frequencies[5] = { 392, 440, 349, 175, 262 };
 
-  for (int lev = 255; lev > 0; lev -= 55) {  // Reduce volume by ~20% each time we loop
-    Serial.print("Volume: ");
-    Serial.print((float(lev) / float(255)) * 100);
-    Serial.println("%");
-    for (byte freq = 0; freq < 5; freq++) {          // Play through the notes
-      vol.tone(frequencies[freq] * 2, SQUARE, lev);  // Start the voice at [freq] Hz, waveform [type], at volume [lev]
-      vol.delay(20);                                 // use Volume delay during sound // Seems to hang!
+  for (int l1 = 127; l1 < 255; l1 += 20) {
+    for (int lev = 0; lev < 20; lev += 25) {
+      for (byte freq = 0; freq < 5; freq++) {
+        vol.tone(frequencies[freq] * 2 - lev, SQUARE, lev + l1);
+        vol.delay(10);
+      }
     }
-    //vol.delay(100);
-    vol.noTone();  // end voice
-    delay(100);
+    vol.noTone();
+    delay(10);
   }
-  Serial.println();
 }
 
 static void playerSound2() {
-  int frequencies[5] = { 220, 440, 660 };  // Notes: G4, A4, F4, F3, C4
+  int frequencies[5] = { 220, 440, 660 };
+  uint32_t rng = 123871;
 
-  for (int dur = 30; dur > 6; dur *= 0.9) {  // Reduce volume by ~20% each time we loop
+  for (int dur = 25; dur > 20; dur *= 0.95) {
     Serial.print("Volume: ");
     Serial.print((float(255) / float(255)) * 100);
     Serial.println("%");
-    for (byte freq = 0; freq < 3; freq++) {            // Play through the notes
-      vol.tone(frequencies[freq] * 2, SAWTOOTH, 255);  // Start the voice at [freq] Hz, waveform [type], at volume [lev]
-      vol.delay(dur);                                  // use Volume delay during sound // Seems to hang!
+    for (byte freq = 0; freq < 3; freq++) {
+      vol.tone(frequencies[freq] + (next(&rng) & 127) - 63, SQUARE, 255);
+      vol.delay(dur);
     }
-    //vol.delay(100);
-    vol.noTone();  // end voice
+    vol.noTone();
     delay(100);
   }
+  int dur = 10;
+  for (int i = 0; i < 15; i++) {
+    for (byte freq = 0; freq < 3; freq++) {
+      vol.tone(frequencies[freq] + (next(&rng) & 3) - 1 - i * 2, SAWTOOTH, 255);
+      vol.delay(dur);
+    }
+  }
+  vol.noTone();
+  delay(100);
+
   Serial.println();
 }
 
@@ -146,22 +165,21 @@ static int next(uint32_t* rs) {
 }
 
 static void playerSound3() {
-  uint32_t rs = 65432;
+  uint32_t rs = 65431;
 
-  for (int dur = 20; dur < 25; dur *= 1.1) {  // Reduce volume by ~20% each time we loop
+  for (int dur = 20; dur < 25; dur *= 1.1) {
     Serial.print("Volume: ");
     Serial.print((float(255) / float(255)) * 100);
     Serial.println("%");
-    for (byte freq = 0; freq < 10; freq++) {  // Play through the notes
-      int f = (next(&rs) & 511) + 250;
+    for (byte freq = 0; freq < 10; freq++) {
+      int f = (next(&rs) & 511) + 450;
       Serial.println(f);
 
-      vol.tone(f, SAWTOOTH, 255);  // Start the voice at [freq] Hz, waveform [type], at volume [lev]
-      vol.delay(dur);              // use Volume delay during sound // Seems to hang!
+      vol.tone(f, SAWTOOTH, 255);
+      vol.delay(dur);
     }
-    //vol.delay(100);
-    vol.noTone();  // end voice
-    delay(100);
+    vol.noTone();
+    delay((next(&rs) & 127) + 20);
   }
   Serial.println();
 }
@@ -173,11 +191,10 @@ static void playerSound4() {
     int f = (next(&rs) & 3);
     Serial.println(f);
 
-    vol.tone(freqs[f] * 2, SQUARE, 255);
+    vol.tone(freqs[f] * 2 + (next(&rs) & 15), SQUARE, 255);
     vol.delay(50);
   }
-  //vol.delay(100);
-  vol.noTone();  // end voice
+  vol.noTone();
   delay(100);
 }
 
@@ -195,14 +212,14 @@ static void playWinSound() {
   int freqs[] = { 262, 330, 392, 494 };
   int rs = 125;
   for (int octave = 0; octave < 3; octave++) {
-    for (int notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {  // Reduce volume by ~20% each time we loop
+    for (int notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {
       int f = freqs[notes] << octave;
       if (f < 4000) {}
-      vol.tone(f, TRIANGLE, 255 - octave * 30);  // Start the voice at [freq] Hz, waveform [type], at volume [lev]
+      vol.tone(f, TRIANGLE, 255 - octave * 30);
       vol.delay(100);
     }
   }
-  vol.noTone();  // end voice
+  vol.noTone();
   delay(100);
 }
 
@@ -210,13 +227,13 @@ static void playLoseSound() {
   int freqs[] = { 700, 500 };
   uint32_t rs = 125;
   for (int octave = 0; octave < 5; octave++) {
-    for (int notes = 0; notes < 2; notes++) {                                  // Reduce volume by ~20% each time we loop
-      vol.tone(freqs[notes] >> (next(&rs) & 3), SAWTOOTH, 255 - octave * 40);  // Start the voice at [freq] Hz, waveform [type], at volume [lev]
-      vol.delay(120);                                                          // use Volume delay during sound // Seems to hang!
-      vol.noTone();                                                            // end voice
+    for (int notes = 0; notes < 2; notes++) {
+      vol.tone(freqs[notes] >> (next(&rs) & 3), SAWTOOTH, 255 - octave * 40);
+      vol.delay(120);
+      vol.noTone();
     }
   }
-  vol.noTone();  // end voice
+  vol.noTone();
   delay(100);
 }
 
@@ -250,6 +267,7 @@ static void resetGameCycle(char* msg) {
   activePlayer = NO_PLAYER;
   canPlay = 0;
   lightsOut();
+  canReset = 0;
   Serial.println(msg);
 }
 
@@ -268,11 +286,13 @@ void loop() {
       }
     }
   } else {
-    if (digitalRead(GREEN_BUTTON_PIN)) {
+    canReset |= ((!digitalRead(GREEN_BUTTON_PIN) << GREEN_BUTTON_PIN) | (!digitalRead(RED_BUTTON_PIN) << RED_BUTTON_PIN));
+    Serial.println(canReset);
+    if ((canReset & GREEN_MASK) && digitalRead(GREEN_BUTTON_PIN)) {
       playWinSound();
-      flashWinner(activePlayer, 20);      
+      flashWinner(activePlayer, 10);
       resetGameCycle("Win");
-    } else if (digitalRead(RED_BUTTON_PIN)) {
+    } else if ((canReset & RED_MASK) && digitalRead(RED_BUTTON_PIN)) {
       playLoseSound();
       resetGameCycle("Lose");
     }
