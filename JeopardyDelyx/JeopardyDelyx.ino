@@ -33,7 +33,7 @@ static void flashWinner(int p, int blinks) {
 }
 
 static void waitForReset() {
-    int i = 0;
+  int i = 0;
   while (!digitalRead(GREEN_BUTTON_PIN) && !digitalRead(RED_BUTTON_PIN)) {
     int k = i % 6;
     if (k >= 4) {
