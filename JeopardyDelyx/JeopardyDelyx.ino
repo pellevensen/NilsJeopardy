@@ -1,5 +1,7 @@
+#include <stdint.h>
 #include <TM1638plus.h>
 #include "volume2.h"
+#include "random.h"
 
 static const uint8_t LAMP_PINS[] = { 3, 12, 10, 8 };
 static const uint8_t PLAYER_BUTTON_PINS[] = { 9, 11, 5, 7 };
@@ -184,7 +186,7 @@ static void playerSound2() {
 
   for (int dur = 25; dur > 20; dur *= 0.95) {
     for (byte freq = 0; freq < 3; freq++) {
-      vol.tone(frequencies[freq] + (next(&rng) & 127) - 63, SQUARE, 255);
+      vol.tone(frequencies[freq] + (next32(&rng) & 127) - 63, SQUARE, 255);
       vol.delay(dur);
     }
     vol.noTone();
@@ -193,7 +195,7 @@ static void playerSound2() {
   int dur = 10;
   for (int i = 0; i < 15; i++) {
     for (byte freq = 0; freq < 3; freq++) {
-      vol.tone(frequencies[freq] + (next(&rng) & 3) - 1 - i * 2, SAWTOOTH, 255);
+      vol.tone(frequencies[freq] + (next32(&rng) & 3) - 1 - i * 2, SAWTOOTH, 255);
       vol.delay(dur);
     }
   }
@@ -201,30 +203,18 @@ static void playerSound2() {
   delay(100);
 }
 
-static uint32_t next(uint32_t* rs) {
-  *rs = *rs + 23456789;
-  uint32_t r = *rs;
-  r ^= r >> 16;
-  r += 0x91239713;
-  r += r << 16;
-  r ^= r >> 16;
-  r += 0x91239765;
-  r ^= r >> 16;
-  return r;
-}
-
 static void playerSound3() {
   uint32_t rs = 65431;
 
   for (int dur = 20; dur < 26; dur *= 1.1) {
-    int bFreq = (next(&rs) & 255) + 400; 
+    int bFreq = (next32(&rs) & 255) + 400; 
     for (byte freq = 0; freq < 15; freq++) {
-      int f = (next(&rs) & 127) + bFreq;
+      int f = (next32(&rs) & 127) + bFreq;
       vol.tone(f, SAWTOOTH, 255);
       vol.delay(dur);
     }
     vol.noTone();
-    delay((next(&rs) & 7) + 20);
+    delay((next32(&rs) & 7) + 20);
   }
 }
 
@@ -232,8 +222,8 @@ static void playerSound4() {
   uint32_t rs = 65432;
   int freqs[] = { 262, 330, 392, 494 };
   for (int notes = 0; notes < 15; notes++) {
-    int f = (next(&rs) & 3);
-    vol.tone(freqs[f] * 2 + (next(&rs) & 15), SQUARE, 255);
+    int f = (next32(&rs) & 3);
+    vol.tone(freqs[f] * 2 + (next32(&rs) & 15), SQUARE, 255);
     vol.delay(50);
   }
   vol.noTone();
@@ -269,7 +259,7 @@ static void playLoseSound() {
   uint32_t rs = 125;
   for (int octave = 0; octave < 5; octave++) {
     for (uint8_t notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {
-      vol.tone(freqs[notes] >> (next(&rs) & 3), SAWTOOTH, 255 - octave * 40);
+      vol.tone(freqs[notes] >> (next32(&rs) & 3), SAWTOOTH, 255 - octave * 40);
       vol.delay(120);
       vol.noTone();
     }
@@ -291,17 +281,6 @@ void setActivePlayer(int p) {
   playPlayerSound(p);
   Serial.print("Player initiative: ");
   Serial.println(p);
-}
-
-// Standard Fisher-Yates shuffle.
-void permutePlayers(uint32_t* rng, int players[], int size) {
-  *rng += 23456789;
-  for (int i = size; i > 1; i--) {
-    int r = next(rng) % i;
-    int tmp = players[i - 1];
-    players[i - 1] = players[r];
-    players[r] = tmp;
-  }
 }
 
 static void resetGameCycle(const char msg[]) {
@@ -357,7 +336,7 @@ static void doJeopardyLoop() {
       canPlay |= (!digitalRead(PLAYER_BUTTON_PINS[i])) << i;
     }
     int shuffledPlayers[] = { 0, 1, 2, 3 };
-    permutePlayers(&rs, shuffledPlayers, 4);
+    permuteArray(&rs, shuffledPlayers, 4);
     for (uint8_t i = 0; i < sizeof(PLAYER_BUTTON_PINS); i++) {
       int p = shuffledPlayers[i];
       if ((canPlay & (1 << p)) && digitalRead(PLAYER_BUTTON_PINS[p])) {
@@ -380,7 +359,8 @@ static void doJeopardyLoop() {
 }
 
 static void doTimeEstimateLoop() {
-  tm.displayIntNum(1000000000 - micros(), true, TMAlignTextLeft);
+  tm.displayIntNum(1000000000 - millis(), true, TMAlignTextLeft);
+  delay(100);
   //
   //readTM1638Buttons();
 }
