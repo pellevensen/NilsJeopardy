@@ -3,8 +3,7 @@
   Created by Connor Nishijima, September 1st 2016.
   Released under the GPLv3 license.
 */
-#ifndef volume2_h
-#define volume2_h
+#pragma once
 
 #include "Arduino.h"
 
@@ -32,5 +31,3 @@ class Volume
     void delay(uint32_t duration);
 	uint32_t millis();
 };
-
-#endif
