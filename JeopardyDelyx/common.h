@@ -8,7 +8,9 @@ typedef enum {
   TIME_BANDITS = 2
 } GameType;
 
-extern const char* getGameName(int gameIdx);
+extern const char* getGameName(uint8_t gameIdx);
+extern uint8_t getGames();
+extern GameType getGame(uint8_t gameIdx);
 
 extern void initIO();
 
@@ -20,6 +22,7 @@ extern uint8_t readGreenButton();
 extern uint8_t readPlayerButton(uint8_t playerIdx);
 extern uint16_t getUserValue(const char* text, uint16_t min, uint16_t max);
 extern void displayNumber(uint32_t v);
+extern void displayText(const char* text);
 extern void displayBinary(uint8_t value);
 extern uint8_t readTM1638Buttons();
 extern uint8_t checkDoubleClick();

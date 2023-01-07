@@ -18,11 +18,33 @@ static const uint8_t AUDIO_PIN = 6;
 #define INCREASE_BUTTON (1 << 1)
 
 #define STEP_DELAY 100000
+#define MAX_GAME_DESCRIPTOR 9
 
-static char GAME_NAMES[][10] = { "JPRDY", "TIMEBAND" };
+static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "NONE", "JPRDY", "TIMEBAND" };
 
 static TM1638plus tm(STROBE_PIN, CLOCK_PIN, DIO_PIN, false);
 static Volume vol;
+
+const char* getGameName(uint8_t gameIdx) {
+  if (gameIdx <= getGames()) {
+    return GAME_NAMES[gameIdx];
+  }
+  return "ERROR";
+}
+
+uint8_t getGames() {
+  return sizeof(GAME_NAMES) / MAX_GAME_DESCRIPTOR;
+}
+
+GameType getGame(uint8_t gameIdx) {
+  switch (gameIdx) {
+    case 1:
+      return JEOPARDY;
+    case 2:
+      return TIME_BANDITS;
+  }
+  return NONE_CHOSEN;
+}
 
 void initIO() {
   tm.displayBegin();
@@ -75,8 +97,11 @@ uint8_t readGreenButton() {
   return digitalRead(GREEN_BUTTON_PIN);
 }
 
+#define INC_SPEED 20
+#define INC_INC_SPEED 1.05
+
 uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
-  uint16_t incSpeed = 20;
+  uint16_t incSpeed = INC_SPEED;
   uint16_t val = min;
   uint8_t lastButtons = 255;
   uint32_t lastActionTimeStamp = 0;
@@ -85,9 +110,9 @@ uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
     uint8_t buttons = tm.readButtons();
     if (lastButtons != buttons || micros() - lastActionTimeStamp >= STEP_DELAY) {
       if (lastButtons == buttons) {
-        incSpeed *= 1.05;
+        incSpeed *= INC_INC_SPEED;
       } else {
-        incSpeed = 20;
+        incSpeed = INC_SPEED;
       }
       lastButtons = buttons;
       lastActionTimeStamp = micros();
@@ -95,14 +120,23 @@ uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
         break;
       }
       if (buttons & INCREASE_BUTTON) {
-        val += incSpeed / 20;
-        val = val > max ? max : val;
+        val += incSpeed / INC_SPEED;
+        if(val >= max) {
+          val = max;
+          incSpeed = INC_SPEED;
+        }
       }
       if (buttons & DECREASE_BUTTON) {
-        val -= incSpeed / 20;
-        val = val < min ? min : val;
+        uint16_t newVal = val - incSpeed / INC_SPEED;
+        if(newVal > val || newVal < min) {
+          val = min;
+          incSpeed = INC_SPEED;
+        } else {
+          val = newVal;
+        }
       }
       tm.displayIntNum(val, false, TMAlignTextRight);
+      tm.displayText(text);
     }
   }
   return val;
@@ -168,4 +202,9 @@ void playLoseSound() {
 
 void displayNumber(uint32_t v) {
   tm.displayIntNum(v, true, TMAlignTextLeft);
+}
+
+void displayText(const char* text) {
+  tm.displayText("        ");
+  tm.displayText(text);
 }

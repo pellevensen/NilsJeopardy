@@ -13,7 +13,27 @@
 #define ARCADE_IO
 #endif
 
+
+
 static GameType currentGame;
+
+static GameType selectGame() {
+  uint8_t gameIdx = 0;
+  uint8_t buttons = 0;
+  uint8_t games = getGames();
+  while(!(readTM1638Buttons() & 128)) {
+    while(buttons == readTM1638Buttons()) ;
+    buttons = readTM1638Buttons();
+    if(buttons & 1) {
+      gameIdx = (gameIdx + games - 1) % games;
+    } else if(buttons & 2) {
+      gameIdx = (gameIdx + 1) % games;
+    }
+    Serial.println(gameIdx);
+    displayText(getGameName(gameIdx));
+  }
+  return getGame(gameIdx);
+}
 
 static GameType waitForStart() {
   int i = 0;
@@ -24,9 +44,7 @@ static GameType waitForStart() {
     }
     uint8_t buttons = readTM1638Buttons();
     if (buttons != 0) {
-      done = TIME_BANDITS;
-      int val = getUserValue("SEK", 10, 10000);
-      Serial.println(val);
+      done = selectGame();
     }
     int k = i % 6;
     if (k >= 4) {
