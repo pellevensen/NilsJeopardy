@@ -23,7 +23,6 @@ static const uint8_t AUDIO_PIN = 6;
 static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "NONE", "JPRDY", "TIMEBAND" };
 
 static TM1638plus tm(STROBE_PIN, CLOCK_PIN, DIO_PIN, false);
-static Volume vol;
 
 const char* getGameName(uint8_t gameIdx) {
   if (gameIdx <= getGames()) {
@@ -48,7 +47,7 @@ GameType getGame(uint8_t gameIdx) {
 
 void initIO() {
   tm.displayBegin();
-  vol.noTone();
+  
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
     pinMode(LAMP_PINS[i], OUTPUT);
   }
@@ -169,35 +168,6 @@ uint8_t checkDoubleClick() {
     }
   }
   return 0;
-}
-
-void playWinSound() {
-  int freqs[] = { 262, 330, 392, 494 };
-
-  for (int octave = 0; octave < 3; octave++) {
-    for (uint8_t notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {
-      int f = freqs[notes] << octave;
-      if (f < 4000) {}
-      vol.tone(f, TRIANGLE, 255 - octave * 30);
-      vol.delay(100);
-    }
-  }
-  vol.noTone();
-  delay(100);
-}
-
-void playLoseSound() {
-  int freqs[] = { 700, 500 };
-  uint32_t rs = 125;
-  for (int octave = 0; octave < 5; octave++) {
-    for (uint8_t notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {
-      vol.tone(freqs[notes] >> (next32(&rs) & 3), SAWTOOTH, 255 - octave * 40);
-      vol.delay(120);
-      vol.noTone();
-    }
-  }
-  vol.noTone();
-  delay(100);
 }
 
 void displayNumber(uint32_t v) {

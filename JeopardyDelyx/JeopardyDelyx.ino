@@ -5,6 +5,7 @@
 #include "jeopardy.h"
 #include "timebandits.h"
 #include "common.h"
+#include "sounds.h"
 
 // static const
 #if 0
@@ -63,7 +64,8 @@ void setup() {
   Serial.begin(9600);
   initIO();
 
-  playWinSound();
+  playBootSound();
+  
   currentGame = waitForStart();
   Serial.print("Game chosen: ");
   Serial.println(currentGame);

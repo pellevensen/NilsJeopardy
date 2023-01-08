@@ -26,5 +26,3 @@ extern void displayText(const char* text);
 extern void displayBinary(uint8_t value);
 extern uint8_t readTM1638Buttons();
 extern uint8_t checkDoubleClick();
-extern void playWinSound();
-extern void playLoseSound();
