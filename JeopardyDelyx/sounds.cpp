@@ -1,8 +1,35 @@
+#include <Arduino.h>
 #include "sounds.h"
-#include "volume2.h"
+#include "Volume.h"
 #include "random.h"
 
+#define AUDIO_PIN 6
+
 static Volume vol;
+static boolean initialized = 0;
+
+static void playTone(uint16_t frequency, uint8_t volume, uint8_t duration, bool turnOff) {
+  if (!initialized) {
+    vol.alternatePin(1);
+    vol.begin();
+    initialized = true;
+  }
+  vol.tone(frequency, volume);
+  vol.fadeOut(duration);
+  vol.delay(duration);
+  if (turnOff) {
+    vol.noTone();
+  }
+}
+
+static void soundOff() {
+  if (initialized) {
+    vol.delay(50);
+    vol.end();
+    digitalWrite(AUDIO_PIN, 0);
+  }
+  initialized = false;
+}
 
 static void playerSound1() {
   const uint16_t frequencies[5] = { 392, 440, 349, 175, 262 };
@@ -10,13 +37,12 @@ static void playerSound1() {
   for (int l1 = 127; l1 < 255; l1 += 20) {
     for (int lev = 0; lev < 20; lev += 25) {
       for (uint8_t freq = 0; freq < 5; freq++) {
-        vol.tone(frequencies[freq] * 2 - lev, SQUARE, lev + l1);
-        vol.delay(10);
+        playTone(frequencies[freq] * 2 - lev, lev + l1, 10, false);
       }
     }
-    vol.noTone();
-    delay(10);
+    vol.delay(10);
   }
+  soundOff();
 }
 
 static void playerSound2() {
@@ -25,8 +51,7 @@ static void playerSound2() {
 
   for (int dur = 25; dur > 20; dur *= 0.95) {
     for (byte freq = 0; freq < 3; freq++) {
-      vol.tone(frequencies[freq] + (next32(&rng) & 127) - 63, SQUARE, 255);
-      vol.delay(dur);
+      playTone(frequencies[freq] + (next32(&rng) & 127) - 63, 255, dur, false);
     }
     vol.noTone();
     delay(100);
@@ -34,12 +59,10 @@ static void playerSound2() {
   int dur = 10;
   for (int i = 0; i < 15; i++) {
     for (byte freq = 0; freq < 3; freq++) {
-      vol.tone(frequencies[freq] + (next32(&rng) & 3) - 1 - i * 2, SAWTOOTH, 255);
-      vol.delay(dur);
+      playTone(frequencies[freq] + (next32(&rng) & 3) - 1 - i * 2, 255, dur, false);
     }
   }
-  vol.noTone();
-  delay(100);
+  soundOff();
 }
 
 static void playerSound3() {
@@ -49,12 +72,12 @@ static void playerSound3() {
     int bFreq = (next32(&rs) & 255) + 400;
     for (byte freq = 0; freq < 15; freq++) {
       int f = (next32(&rs) & 127) + bFreq;
-      vol.tone(f, SAWTOOTH, 255);
-      vol.delay(dur);
+      playTone(f, 255, dur, false);
     }
     vol.noTone();
     delay((next32(&rs) & 7) + 20);
   }
+  soundOff();
 }
 
 static void playerSound4() {
@@ -62,11 +85,9 @@ static void playerSound4() {
   const uint16_t freqs[] = { 262, 330, 392, 494 };
   for (int notes = 0; notes < 15; notes++) {
     int f = (next32(&rs) & 3);
-    vol.tone(freqs[f] * 2 + (next32(&rs) & 15), SQUARE, 255);
-    vol.delay(50);
+    playTone(freqs[f] * 2 + (next32(&rs) & 15), 255, 50, false);
   }
-  vol.noTone();
-  delay(100);
+  soundOff();
 }
 
 void playPlayerSound(int p) {
@@ -85,12 +106,10 @@ void playWinSound() {
     for (uint8_t notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {
       int f = freqs[notes] << octave;
       if (f < 4000) {}
-      vol.tone(f, TRIANGLE, 255 - octave * 30);
-      vol.delay(100);
+      playTone(f, 255 - octave * 30, 100, false);
     }
   }
-  vol.noTone();
-  delay(100);
+  soundOff();
 }
 
 void playLoseSound() {
@@ -98,37 +117,20 @@ void playLoseSound() {
   uint32_t rs = 125;
   for (int octave = 0; octave < 5; octave++) {
     for (uint8_t notes = 0; notes < sizeof(freqs) / sizeof(int); notes++) {
-      vol.tone(freqs[notes] >> (next32(&rs) & 3), SAWTOOTH, 255 - octave * 40);
-      vol.delay(120);
-      vol.noTone();
+      playTone(freqs[notes] >> (next32(&rs) & 3), 255 - octave * 40, 120, true);
     }
   }
-  vol.noTone();
-  delay(100);
+  soundOff();
 }
 
 void playBootSound() {
-  uint8_t volume = 255;
-  uint32_t rs = 128;
-  uint16_t freqs[] = {440, (uint16_t) (440 * 1.2599), (uint16_t) (440 * 1.33484), (uint16_t) (440 * 1.68179)};
-
-  uint8_t octave = 1;
-  for (uint16_t fIdx = 0; volume > 100; fIdx++) {
-    octave = next32(&rs) % 3;
-    uint16_t fo = freqs[fIdx & 3] << octave;
-    if (fo < 2000) {
-      uint8_t bv = volume * (fIdx % 5 == 3 ? 1.8 : 1.0);
-      if(bv * volume > 255) {
-        bv = 255;
-      }      
-      for(int vOff = 256; vOff > 30; vOff *= 0.8) {
-        uint8_t av = (bv * vOff) >> 8;
-        vol.tone(fo, PWM_25, av);
-        vol.delay(12);
+  for (uint32_t bFreq = 200; bFreq < 1000; bFreq *= 1.4142) {
+    uint8_t v = 255;
+    for (uint32_t oFreq = (bFreq << 9); oFreq > (bFreq << 7); oFreq *= 0.99) {
+      if (oFreq >> 8 < 2000) {
+        playTone(oFreq >> 8, v--, 2, false);
       }
-      volume *= 0.9;
     }
   }
-  vol.noTone();
-  delay(100);
+  soundOff();
 }
