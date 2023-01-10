@@ -49,14 +49,14 @@ static void playerSound2() {
   const uint16_t frequencies[5] = { 220, 440, 660 };
   uint32_t rng = 123871;
 
-  for (int dur = 25; dur > 20; dur *= 0.95) {
+  for (int dur = 35; dur > 25; dur *= 0.95) {
     for (byte freq = 0; freq < 3; freq++) {
       playTone(frequencies[freq] + (next32(&rng) & 127) - 63, 255, dur, false);
     }
     vol.noTone();
     delay(100);
   }
-  int dur = 10;
+  int dur = 15;
   for (int i = 0; i < 15; i++) {
     for (byte freq = 0; freq < 3; freq++) {
       playTone(frequencies[freq] + (next32(&rng) & 3) - 1 - i * 2, 255, dur, false);
