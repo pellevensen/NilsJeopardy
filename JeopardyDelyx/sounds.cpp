@@ -8,7 +8,7 @@
 static Volume vol;
 static boolean initialized = 0;
 
-static void playTone(uint16_t frequency, uint8_t volume, uint8_t duration, bool turnOff) {
+static void playTone(uint16_t frequency, uint8_t volume, uint16_t duration, bool turnOff) {
   if (!initialized) {
     vol.alternatePin(1);
     vol.begin();
@@ -29,6 +29,13 @@ static void soundOff() {
     digitalWrite(AUDIO_PIN, 0);
   }
   initialized = false;
+}
+
+uint16_t playNote(uint8_t note, uint16_t duration) {
+  int freq = 440 * pow(2, note / 12.0);
+  playTone(freq, 255, duration, true);
+  soundOff();
+  return duration + 51;
 }
 
 static void playerSound1() {

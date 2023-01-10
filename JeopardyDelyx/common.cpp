@@ -2,6 +2,7 @@
 #include <TM1638plus.h>
 #include "random.h"
 #include "common.h"
+#include "math.h"
 
 static const uint8_t STROBE_PIN = A1;  // strobe = GPIO connected to strobe line of module
 static const uint8_t CLOCK_PIN = A2;   // clock = GPIO connected to clock line of module
@@ -13,10 +14,14 @@ static const uint8_t PLAYER_BUTTON_PINS[] = { 9, 11, 5, 7 };
 static const uint8_t AUDIO_PIN = 6;
 
 #define CONFIRM_BUTTON (1 << 7)
-#define DECREASE_BUTTON (1 << 0)
-#define INCREASE_BUTTON (1 << 1)
+#define HELP_BUTTON (1 << 5)
+#define BACK_BUTTON (1 << 6)
+#define DOWN_BUTTON (1 << 0)
+#define UP_BUTTON (1 << 1)
+#define LEFT_BUTTON (1 << 2)
+#define RIGHT_BUTTON (1 << 3)
 
-#define STEP_DELAY 100000
+#define STEP_DELAY 200000
 #define MAX_GAME_DESCRIPTOR 9
 
 static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "NONE", "JPRDY", "TIMEBAND" };
@@ -46,7 +51,7 @@ GameType getGame(uint8_t gameIdx) {
 
 void initIO() {
   tm.displayBegin();
-  
+
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
     pinMode(LAMP_PINS[i], OUTPUT);
   }
@@ -73,7 +78,7 @@ uint8_t readPlayerButton(uint8_t playerIdx) {
 
 void lightsOut() {
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
-    digitalWrite(LAMP_PINS[i], 1);
+    lamp(i, false);
   }
 }
 
@@ -93,6 +98,13 @@ uint8_t readRedButton() {
 
 uint8_t readGreenButton() {
   return digitalRead(GREEN_BUTTON_PIN);
+}
+
+void waitForGreenFlank() {
+  uint8_t b = readGreenButton();
+  while (b == readGreenButton()) {
+    // Do nothing.
+  }
 }
 
 #define INC_SPEED 20
@@ -117,16 +129,16 @@ uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
       if (buttons & CONFIRM_BUTTON) {
         break;
       }
-      if (buttons & INCREASE_BUTTON) {
+      if (buttons & UP_BUTTON) {
         val += incSpeed / INC_SPEED;
-        if(val >= max) {
+        if (val >= max) {
           val = max;
           incSpeed = INC_SPEED;
         }
       }
-      if (buttons & DECREASE_BUTTON) {
+      if (buttons & DOWN_BUTTON) {
         uint16_t newVal = val - incSpeed / INC_SPEED;
-        if(newVal > val || newVal < min) {
+        if (newVal > val || newVal < min) {
           val = min;
           incSpeed = INC_SPEED;
         } else {
@@ -137,6 +149,51 @@ uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
       tm.displayText(text);
     }
   }
+
+  return val;
+}
+
+uint16_t getUserCursorValue(const char* text, uint16_t min, uint16_t max) {
+  uint16_t val = min;
+  uint8_t lastButtons = 255;
+  uint32_t lastActionTimeStamp = 0;
+  uint8_t cursorPos = 0;
+  uint8_t maxCursorPos = log10(max);
+  static const uint16_t positionDigits[] = { 1, 10, 100, 1000, 10000 };
+
+  while (1) {
+    uint8_t buttons = tm.readButtons();
+    if (lastButtons != buttons || micros() - lastActionTimeStamp >= STEP_DELAY) {
+      lastButtons = buttons;
+      lastActionTimeStamp = micros();
+      if (buttons & CONFIRM_BUTTON) {
+        break;
+      }
+      if (buttons & UP_BUTTON) {
+        val += positionDigits[cursorPos];
+        if (val >= max) {
+          val = max;
+        }
+      } else if (buttons & DOWN_BUTTON) {
+        uint16_t newVal = val - positionDigits[cursorPos];
+        if (newVal > val || newVal < min) {
+          val = min;
+        } else {
+          val = newVal;
+        }
+      } else if (buttons & LEFT_BUTTON) {
+        cursorPos = (cursorPos + 1) % maxCursorPos;
+      } else if (buttons & RIGHT_BUTTON) {
+        cursorPos = (cursorPos - 1 + maxCursorPos) % maxCursorPos;
+      }
+      tm.displayIntNum(val, false, TMAlignTextRight);
+      tm.displayText(text);
+      if ((millis() & 0x40) > 0x20) {
+        tm.display7Seg(7 - cursorPos, 1 << 7);
+      }
+    }
+  }
+
   return val;
 }
 

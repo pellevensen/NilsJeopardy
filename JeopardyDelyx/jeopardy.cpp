@@ -38,6 +38,7 @@ void initJeopardy() {
   canPlay = 0;
   canReset = 0;
   lightsOut();
+  playWinSound();
 }
 
 void doJeopardyLoop() {

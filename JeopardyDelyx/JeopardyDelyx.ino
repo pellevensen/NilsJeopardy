@@ -29,7 +29,6 @@ static GameType selectGame() {
     } else if(buttons & 2) {
       gameIdx = (gameIdx + 1) % games;
     }
-    Serial.println(gameIdx);
     displayText(getGameName(gameIdx));
   }
   return getGame(gameIdx);
@@ -79,7 +78,6 @@ void setup() {
     default:
       Serial.println("Failed setup; no game type chosen; this should never happen.");
   }
-  playWinSound();
   lightsOut();
 }
 
