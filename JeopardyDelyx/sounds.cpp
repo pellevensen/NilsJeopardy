@@ -38,6 +38,19 @@ uint16_t playNote(uint8_t note, uint16_t duration) {
   return duration + 51;
 }
 
+void playMelody(uint8_t notes[], uint8_t durations[], int tempo) {
+  int i = 0;
+
+  while(notes[i] != END_MELODY) {
+      if(notes[i] == REST) {
+        delay(durations[i] * tempo);
+      } else {
+        playNote(notes[i], durations[i] * tempo);
+      }
+      i++;
+  }
+}
+
 static void playerSound1() {
   const uint16_t frequencies[5] = { 392, 440, 349, 175, 262 };
 
