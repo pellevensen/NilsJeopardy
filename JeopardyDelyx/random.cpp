@@ -6,9 +6,9 @@ static uint32_t rngState = initRandom();
 
 static uint32_t initRandom() {
   uint32_t x = 0;
-  
-  for(int i = 0; i < 10; i++) {
-    for(int i = A0; i <= A6; i++) {
+
+  for (int i = 0; i < 10; i++) {
+    for (int i = A0; i <= A6; i++) {
       x += analogRead(i);
       x *= 23456789;
       x += micros();
@@ -42,7 +42,7 @@ void permuteArray(int players[], int size) {
 uint32_t next32(uint32_t* state) {
   *state = *state + 23456789;
   uint32_t r = *state;
-  for(int i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     r ^= r >> 20 ^ r >> 7;
     r += 0x91239713;
     r += r << 16;
@@ -52,7 +52,7 @@ uint32_t next32(uint32_t* state) {
 }
 
 uint32_t nextRandom() {
-  if(rngState == 0) {
+  if (rngState == 0) {
     rngState = initRandom();
   }
   return next32(&rngState);

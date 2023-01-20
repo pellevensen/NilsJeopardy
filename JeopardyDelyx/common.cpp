@@ -83,7 +83,7 @@ uint8_t readPlayerButton(uint8_t playerIdx) {
 
 uint8_t readPlayerButtons() {
   uint8_t buttons = 0;
-  for(int i = 3; i >= 0; i--) {
+  for (int i = 3; i >= 0; i--) {
     buttons <<= 1;
     buttons |= digitalRead(PLAYER_BUTTON_PINS[i]);
   }
@@ -91,7 +91,7 @@ uint8_t readPlayerButtons() {
   return buttons;
 }
 
- 
+
 void lightsOut() {
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
     lamp(i, false);

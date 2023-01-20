@@ -40,7 +40,7 @@ void initJeopardy() {
   activePlayer = NO_PLAYER;
   canPlay = 0;
   canReset = 0;
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     playerScores[i] = 0;
   }
   lightsOut();
@@ -50,7 +50,7 @@ void initJeopardy() {
 
 static void insertNumber(char* textScores, uint8_t playerScore, int position) {
   uint8_t tens = playerScore / 10;
-  if(playerScore >= 10) {
+  if (playerScore >= 10) {
     textScores[position] = '0' + tens;
   }
   textScores[position + 1] = '0' + (playerScore - 10 * tens);
@@ -58,7 +58,7 @@ static void insertNumber(char* textScores, uint8_t playerScore, int position) {
 
 static void displayScores() {
   char textScores[] = "        ";
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     insertNumber(textScores, playerScores[i], 2 * i);
   }
   displayText(textScores);

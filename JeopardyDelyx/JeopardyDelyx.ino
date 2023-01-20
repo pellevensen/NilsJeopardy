@@ -39,7 +39,7 @@ static GameType selectGame() {
 static uint8_t triangle(uint16_t v0, uint8_t cycle) {
   uint8_t rCycle = cycle * 2 - 2;
   uint8_t v = v0 % rCycle;
-  if(v >= cycle) {
+  if (v >= cycle) {
     v = rCycle - v;
   }
   return v;
