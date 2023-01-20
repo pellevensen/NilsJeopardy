@@ -3,9 +3,10 @@
 #include <stdint.h>
 
 typedef enum {
-  NONE_CHOSEN = 0,
-  JEOPARDY = 1,
-  TIME_BANDITS = 2
+  NO_GAME = -1,
+  JEOPARDY = 0,
+  TIME_BANDITS = 1,
+  PSYMON = 2
 } GameType;
 
 extern const char* getGameName(uint8_t gameIdx);
@@ -21,8 +22,10 @@ extern uint8_t readRedButton();
 extern uint8_t readGreenButton();
 extern void waitForGreenFlank();
 extern uint8_t readPlayerButton(uint8_t playerIdx);
-extern uint16_t getUserValue(const char* text, uint16_t min, uint16_t max);
-extern uint16_t getUserCursorValue(const char* text, uint16_t min, uint16_t max);
+extern uint8_t readPlayerButtons();
+
+// extern uint16_t getUserValue(const char* text, uint16_t min, uint16_t max);
+extern uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max);
 extern void displayNumber(uint32_t v);
 extern void displayText(const char* text);
 extern void displayBinary(uint8_t value);

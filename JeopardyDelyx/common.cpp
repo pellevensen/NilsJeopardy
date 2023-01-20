@@ -24,7 +24,7 @@ static const uint8_t AUDIO_PIN = 6;
 #define STEP_DELAY 200000
 #define MAX_GAME_DESCRIPTOR 9
 
-static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "NONE", "JPRDY", "TIMEBAND" };
+static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "JPRDY", "TIMEBAND", "PSYMON" };
 
 static TM1638plus tm(STROBE_PIN, CLOCK_PIN, DIO_PIN, false);
 
@@ -41,12 +41,16 @@ uint8_t getGames() {
 
 GameType getGame(uint8_t gameIdx) {
   switch (gameIdx) {
-    case 1:
+    case 0:
       return JEOPARDY;
-    case 2:
+    case 1:
       return TIME_BANDITS;
+    case 2:
+      return PSYMON;
   }
-  return NONE_CHOSEN;
+  Serial.print("Illegal game: ");
+  Serial.println(gameIdx);
+  return NO_GAME;
 }
 
 void initIO() {
@@ -60,6 +64,7 @@ void initIO() {
   for (uint8_t i = 0; i < sizeof(PLAYER_BUTTON_PINS); i++) {
     pinMode(PLAYER_BUTTON_PINS[i], INPUT);
   }
+
   pinMode(GREEN_BUTTON_PIN, INPUT);
   pinMode(RED_BUTTON_PIN, INPUT);
 }
@@ -76,10 +81,22 @@ uint8_t readPlayerButton(uint8_t playerIdx) {
   return digitalRead(PLAYER_BUTTON_PINS[playerIdx]);
 }
 
+uint8_t readPlayerButtons() {
+  uint8_t buttons = 0;
+  for(int i = 3; i >= 0; i--) {
+    buttons <<= 1;
+    buttons |= digitalRead(PLAYER_BUTTON_PINS[i]);
+  }
+
+  return buttons;
+}
+
+ 
 void lightsOut() {
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
     lamp(i, false);
   }
+  displayBinary(0);
 }
 
 void flashWinner(int p, int blinks) {
@@ -110,9 +127,10 @@ void waitForGreenFlank() {
 #define INC_SPEED 20
 #define INC_INC_SPEED 1.05
 
-uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
+#if 0
+uint16_t getUserValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max) {
   uint16_t incSpeed = INC_SPEED;
-  uint16_t val = min;
+  uint16_t val = dflt;
   uint8_t lastButtons = 255;
   uint32_t lastActionTimeStamp = 0;
 
@@ -152,9 +170,10 @@ uint16_t getUserValue(const char* text, uint16_t min, uint16_t max) {
 
   return val;
 }
+#endif
 
-uint16_t getUserCursorValue(const char* text, uint16_t min, uint16_t max) {
-  uint16_t val = min;
+uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max) {
+  uint16_t val = dflt;
   uint8_t lastButtons = 255;
   uint32_t lastActionTimeStamp = 0;
   uint8_t cursorPos = 0;
@@ -192,6 +211,9 @@ uint16_t getUserCursorValue(const char* text, uint16_t min, uint16_t max) {
         tm.display7Seg(7 - cursorPos, 1 << 7);
       }
     }
+  }
+  while (lastButtons == tm.readButtons()) {
+    // Wait for release
   }
 
   return val;

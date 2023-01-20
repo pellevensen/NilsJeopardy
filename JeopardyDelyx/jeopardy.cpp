@@ -12,14 +12,17 @@
 static uint8_t activePlayer;
 static uint8_t canPlay;
 static uint8_t canReset;
-
+static uint8_t playerScores[4];
 static const uint8_t NO_PLAYER = 255;
 
-void setActivePlayer(int p) {
+static void displayScores();
+
+static void setActivePlayer(int p) {
   lightsOut();
   activePlayer = p;
   if (p != NO_PLAYER) {
     lamp(p, true);
+    displayBinary(1 << (2 * p + 1));
     playPlayerSound(p);
     Serial.print("Player initiative: ");
     Serial.println(p);
@@ -37,8 +40,28 @@ void initJeopardy() {
   activePlayer = NO_PLAYER;
   canPlay = 0;
   canReset = 0;
+  for(int i = 0; i < 4; i++) {
+    playerScores[i] = 0;
+  }
   lightsOut();
   playWinSound();
+  displayScores();
+}
+
+static void insertNumber(char* textScores, uint8_t playerScore, int position) {
+  uint8_t tens = playerScore / 10;
+  if(playerScore > 10) {
+    textScores[position] = '0' + tens;
+  }
+  textScores[position + 1] = '0' + (playerScore - 10 * tens);
+}
+
+static void displayScores() {
+  char textScores[] = "        ";
+  for(int i = 0; i < 4; i++) {
+    insertNumber(textScores, playerScores[i], 2 * i);
+  }
+  displayText(textScores);
 }
 
 void doJeopardyLoop() {
@@ -59,12 +82,13 @@ void doJeopardyLoop() {
         break;
       }
     }
-    Serial.println("\n");
   } else {
     canReset |= ((!readGreenButton() << GREEN_BUTTON_IDX) | (!readRedButton() << RED_BUTTON_IDX));
     if ((canReset & GREEN_MASK) && readGreenButton()) {
       playWinSound();
       flashWinner(activePlayer, 10);
+      playerScores[activePlayer]++;
+      displayScores();
       resetGameCycle("Win");
     } else if ((canReset & RED_MASK) && readRedButton()) {
       playLoseSound();

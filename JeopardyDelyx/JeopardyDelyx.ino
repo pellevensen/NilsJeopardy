@@ -3,8 +3,10 @@
 #include "random.h"
 #include "jeopardy.h"
 #include "timebandits.h"
+#include "psymon.h"
 #include "common.h"
 #include "sounds.h"
+#include "time.h"
 
 // static const
 #if 0
@@ -13,57 +15,75 @@
 #define ARCADE_IO
 #endif
 
-
-
 static GameType currentGame;
 
 static GameType selectGame() {
   uint8_t gameIdx = 0;
   uint8_t buttons = 0;
   uint8_t games = getGames();
-  while(!(readTM1638Buttons() & 128)) {
-    while(buttons == readTM1638Buttons()) ;
+  while (!(readTM1638Buttons() & 128)) {
+    displayText(getGameName(gameIdx));
+    while (buttons == readTM1638Buttons()) {
+      // Wait until some button pressed.
+    }
     buttons = readTM1638Buttons();
-    if(buttons & 1) {
+    if (buttons & 1) {
       gameIdx = (gameIdx + games - 1) % games;
-    } else if(buttons & 2) {
+    } else if (buttons & 2) {
       gameIdx = (gameIdx + 1) % games;
     }
-    displayText(getGameName(gameIdx));
   }
   return getGame(gameIdx);
 }
 
 static GameType waitForStart() {
   int i = 0;
-  GameType done = NONE_CHOSEN;
-  while (!done) {
+  GameType game = NO_GAME;
+  while (game == NO_GAME) {
     if (readRedButton() || readGreenButton()) {
-      done = JEOPARDY;
+      lightsOut();
+      game = JEOPARDY;
     }
     uint8_t buttons = readTM1638Buttons();
     if (buttons != 0) {
-      done = selectGame();
+      while (readTM1638Buttons() & 128) {
+        // Do nothing.
+      }
+      delay(50);
+      lightsOut();
+      game = selectGame();
     }
-    int k = i % 6;
-    if (k >= 4) {
-      k = 6 - k;
+    int k1 = i % 6;
+    if (k1 >= 4) {
+      k1 = 6 - k1;
     }
-    lamp(k, true);
+    int k2 = i % 14;
+    if (k2 >= 8) {
+      k2 = 14 - k2;
+    }
+    lamp(k1, true);
     delay(100);
-    lamp(k, false);
-    displayBinary(1 << k);
+    lamp(k1, false);
+    displayBinary(1 << k2);
     i++;
   }
-  return done;
+  return game;
 }
 
 void setup() {
   Serial.begin(9600);
   initIO();
+  startClock();
 
   playBootSound();
-  
+
+#if 0
+  delay(10000);
+  uint32_t ic = getTime();
+  Serial.print("getTime: ");
+  Serial.println(ic);
+#endif
+
   currentGame = waitForStart();
   Serial.print("Game chosen: ");
   Serial.println(currentGame);
@@ -74,7 +94,9 @@ void setup() {
     case TIME_BANDITS:
       initTimeBandits();
       break;
-    case NONE_CHOSEN:
+    case PSYMON:
+      initPsymon();
+      break;
     default:
       Serial.println("Failed setup; no game type chosen; this should never happen.");
   }
@@ -89,7 +111,9 @@ void loop() {
     case TIME_BANDITS:
       doTimeBanditsLoop();
       break;
-    case NONE_CHOSEN:
+    case PSYMON:
+      doPsymonLoop();
+      break;
     default:
       Serial.println("No game type chosen; this should never happen.");
   }

@@ -9,7 +9,7 @@ static uint32_t startTime;
 static int32_t playerTimes[4];
 static int32_t goal;
 
-void countDown() {
+static void countDown() {
   for (int i = 0; i < 4; i++) {
     lamp(i, true);
   }
@@ -34,7 +34,7 @@ static void startGame() {
 void initTimeBandits() {
   while (readTM1638Buttons() & 128)
     ;
-  goal = getUserCursorValue("TID", 10, 7200) * 1000;
+  goal = getUserCursorValue("TID", 10, 5, 7200) * 1000;
   startGame();
 }
 

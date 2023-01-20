@@ -22,6 +22,10 @@ static void playTone(uint16_t frequency, uint8_t volume, uint16_t duration, bool
   }
 }
 
+void soundDelay() {
+  vol.delay(10);
+}
+
 static void soundOff() {
   if (initialized) {
     vol.delay(50);
@@ -38,16 +42,33 @@ uint16_t playNote(uint8_t note, uint16_t duration) {
   return duration + 51;
 }
 
+uint16_t playNoteNonBlocking(uint8_t note, uint16_t duration) {
+  int freq = 440 * pow(2, note / 12.0);
+  if (!initialized) {
+    vol.alternatePin(1);
+    vol.begin();
+    initialized = true;
+  }
+  vol.tone(freq, 255);
+  vol.fadeOut(duration);
+  vol.delay(59);
+  return duration + 51;
+}
+
+void noteOff() {
+  vol.noTone();
+}
+
 void playMelody(uint8_t notes[], uint8_t durations[], int tempo) {
   int i = 0;
 
-  while(notes[i] != END_MELODY) {
-      if(notes[i] == REST) {
-        delay(durations[i] * tempo);
-      } else {
-        playNote(notes[i], durations[i] * tempo);
-      }
-      i++;
+  while (notes[i] != END_MELODY) {
+    if (notes[i] == REST) {
+      delay(durations[i] * tempo);
+    } else {
+      playNote(notes[i], durations[i] * tempo);
+    }
+    i++;
   }
 }
 
