@@ -50,7 +50,7 @@ void initJeopardy() {
 
 static void insertNumber(char* textScores, uint8_t playerScore, int position) {
   uint8_t tens = playerScore / 10;
-  if(playerScore > 10) {
+  if(playerScore >= 10) {
     textScores[position] = '0' + tens;
   }
   textScores[position + 1] = '0' + (playerScore - 10 * tens);
