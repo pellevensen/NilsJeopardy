@@ -36,6 +36,15 @@ static GameType selectGame() {
   return getGame(gameIdx);
 }
 
+static uint8_t triangle(uint16_t v0, uint8_t cycle) {
+  uint8_t rCycle = cycle * 2 - 2;
+  uint8_t v = v0 % rCycle;
+  if(v >= cycle) {
+    v = rCycle - v;
+  }
+  return v;
+}
+
 static GameType waitForStart() {
   int i = 0;
   GameType game = NO_GAME;
@@ -53,18 +62,10 @@ static GameType waitForStart() {
       lightsOut();
       game = selectGame();
     }
-    int k1 = i % 6;
-    if (k1 >= 4) {
-      k1 = 6 - k1;
-    }
-    int k2 = i % 14;
-    if (k2 >= 8) {
-      k2 = 14 - k2;
-    }
-    lamp(k1, true);
+    lamp(triangle(i, 4), true);
+    displayBinary(1 << triangle(i, 8));
     delay(100);
-    lamp(k1, false);
-    displayBinary(1 << k2);
+    lamp(triangle(i, 4), false);
     i++;
   }
   return game;
