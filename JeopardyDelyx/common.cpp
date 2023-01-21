@@ -13,14 +13,6 @@ static const uint8_t RED_BUTTON_PIN = 2;
 static const uint8_t PLAYER_BUTTON_PINS[] = { 9, 11, 5, 7 };
 static const uint8_t AUDIO_PIN = 6;
 
-#define CONFIRM_BUTTON (1 << 7)
-#define HELP_BUTTON (1 << 5)
-#define BACK_BUTTON (1 << 6)
-#define DOWN_BUTTON (1 << 0)
-#define UP_BUTTON (1 << 1)
-#define LEFT_BUTTON (1 << 2)
-#define RIGHT_BUTTON (1 << 3)
-
 #define STEP_DELAY 200000
 #define MAX_GAME_DESCRIPTOR 9
 
@@ -73,6 +65,10 @@ uint8_t readTM1638Buttons() {
   return tm.readButtons();
 }
 
+uint8_t isTM1638ButtonPressed(TM1638Buttons b) {
+  return readTM1638Buttons() & b;
+}
+
 void lamp(uint8_t lampIdx, bool on) {
   digitalWrite(LAMP_PINS[lampIdx], !on);
 }
@@ -90,7 +86,6 @@ uint8_t readPlayerButtons() {
 
   return buttons;
 }
-
 
 void lightsOut() {
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
@@ -185,24 +180,24 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
     if (lastButtons != buttons || micros() - lastActionTimeStamp >= STEP_DELAY) {
       lastButtons = buttons;
       lastActionTimeStamp = micros();
-      if (buttons & CONFIRM_BUTTON) {
+      if (buttons & BUT_OK) {
         break;
       }
-      if (buttons & UP_BUTTON) {
+      if (buttons & BUT_UP) {
         val += positionDigits[cursorPos];
         if (val >= max) {
           val = max;
         }
-      } else if (buttons & DOWN_BUTTON) {
+      } else if (buttons & BUT_DOWN) {
         uint16_t newVal = val - positionDigits[cursorPos];
         if (newVal > val || newVal < min) {
           val = min;
         } else {
           val = newVal;
         }
-      } else if (buttons & LEFT_BUTTON) {
+      } else if (buttons & BUT_LEFT) {
         cursorPos = (cursorPos + 1) % maxCursorPos;
-      } else if (buttons & RIGHT_BUTTON) {
+      } else if (buttons & BUT_RIGHT) {
         cursorPos = (cursorPos - 1 + maxCursorPos) % maxCursorPos;
       }
       tm.displayIntNum(val, false, TMAlignTextRight);

@@ -77,45 +77,45 @@ void setup() {
   startClock();
 
   playBootSound();
+  uint8_t done = 0;
 
-#if 0
-  delay(10000);
-  uint32_t ic = getTime();
-  Serial.print("getTime: ");
-  Serial.println(ic);
-#endif
-
-  currentGame = waitForStart();
-  Serial.print("Game chosen: ");
-  Serial.println(currentGame);
-  switch (currentGame) {
-    case JEOPARDY:
-      initJeopardy();
-      break;
-    case TIME_BANDITS:
-      initTimeBandits();
-      break;
-    case PSYMON:
-      initPsymon();
-      break;
-    default:
-      Serial.println("Failed setup; no game type chosen; this should never happen.");
+  while (!done) {
+    currentGame = waitForStart();
+    Serial.print("Game chosen: ");
+    Serial.println(currentGame);
+    switch (currentGame) {
+      case JEOPARDY:
+        done = initJeopardy();
+        break;
+      case TIME_BANDITS:
+        done = initTimeBandits();
+        break;
+      case PSYMON:
+        done = initPsymon();
+        break;
+      default:
+        Serial.println("Failed setup; no game type chosen; this should never happen.");
+    }
+    lightsOut();
   }
-  lightsOut();
 }
 
 void loop() {
+  uint8_t done = 0;
   switch (currentGame) {
     case JEOPARDY:
-      doJeopardyLoop();
+      done = doJeopardyLoop();
       break;
     case TIME_BANDITS:
-      doTimeBanditsLoop();
+      done = doTimeBanditsLoop();
       break;
     case PSYMON:
-      doPsymonLoop();
+      done = doPsymonLoop();
       break;
     default:
       Serial.println("No game type chosen; this should never happen.");
+  }
+  if (done) {
+    setup();
   }
 }

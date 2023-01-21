@@ -3,5 +3,5 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-extern void initJeopardy();
-extern void doJeopardyLoop();
+extern uint8_t initJeopardy();
+extern uint8_t doJeopardyLoop();

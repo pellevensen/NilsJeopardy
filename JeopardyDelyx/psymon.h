@@ -3,5 +3,5 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-extern void initPsymon();
-extern void doPsymonLoop();
+extern uint8_t initPsymon();
+extern uint8_t doPsymonLoop();

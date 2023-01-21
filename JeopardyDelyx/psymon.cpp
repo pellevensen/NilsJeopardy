@@ -31,7 +31,13 @@ static uint32_t rng;
 
 static const uint8_t NOTES[] = { NOTE1, NOTE2, NOTE3, NOTE4 };
 
-static void startGame() {
+static uint8_t startGame() {
+  while (!isTM1638ButtonPressed(BUT_BACK) && !readGreenButton()) {
+    // Do nothing...
+  }
+  if (isTM1638ButtonPressed(BUT_BACK)) {
+    return 0;
+  }
   waitForGreenFlank();
   displayText("        ");
   seed = nextRandom();
@@ -42,13 +48,14 @@ static void startGame() {
   rng = seed;
   speed = baseSpeed;
   position = 0;
+  return 1;
 }
 
 #define MAX_SPEED 5
 #define MIN_SPEED 1
 #define MIN_DELAY 50
 
-void initPsymon() {
+uint8_t initPsymon() {
   while (readTM1638Buttons() & 128)
     ;
   speed = getUserCursorValue("Speed", (MAX_SPEED + MIN_SPEED) / 2, MIN_SPEED, MAX_SPEED) + 1;
@@ -57,7 +64,7 @@ void initPsymon() {
   timeOut = getUserCursorValue("TmOut", 2, 1, 10);
   speedUp = getUserCursorValue("Faster", 0, 0, 10);
   speed = baseSpeed;
-  startGame();
+  return startGame();
 }
 
 static void adjustSpeed() {
@@ -92,7 +99,7 @@ static void gameOver() {
   phase = PSYMON_GAME_OVER;
 }
 
-void doPsymonLoop() {
+uint8_t doPsymonLoop() {
   static uint32_t lastNoteTimestamp = 0;
   if (getTime() > lastNoteTimestamp + 1000) {
     noteOff();
@@ -153,6 +160,10 @@ void doPsymonLoop() {
       gameOver();
     }
   } else if (phase == PSYMON_GAME_OVER) {
-    startGame();
+    if (!startGame()) {
+      return 1;
+    }
   }
+
+  return 0;
 }

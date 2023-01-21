@@ -9,6 +9,16 @@ typedef enum {
   PSYMON = 2
 } GameType;
 
+typedef enum {
+  BUT_OK = 128,
+  BUT_BACK = 64,
+  BUT_HELP = 32,
+  BUT_DOWN = 1,
+  BUT_UP = 2,
+  BUT_LEFT = 4,
+  BUT_RIGHT = 8
+} TM1638Buttons;
+
 extern const char* getGameName(uint8_t gameIdx);
 extern uint8_t getGames();
 extern GameType getGame(uint8_t gameIdx);
@@ -30,4 +40,5 @@ extern void displayNumber(uint32_t v);
 extern void displayText(const char* text);
 extern void displayBinary(uint8_t value);
 extern uint8_t readTM1638Buttons();
+extern uint8_t isTM1638ButtonPressed(TM1638Buttons b);
 extern uint8_t checkDoubleClick();

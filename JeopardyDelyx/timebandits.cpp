@@ -21,27 +21,35 @@ static void countDown() {
     lamp(3 - i, false);
   }
   uint32_t noteMillis = playNote(12, 1000);
-  startTime = millis() - noteMillis;
+  startTime = getTime() - noteMillis;
 }
 
-static void startGame() {
+static uint8_t startGame() {
+  while(!isTM1638ButtonPressed(BUT_BACK) && !readGreenButton()) {
+    // Do nothing...
+  }
+  if(isTM1638ButtonPressed(BUT_BACK)) {
+    return 0;
+  }
   waitForGreenFlank();
+
   for (int i = 0; i < 4; i++) {
     playerTimes[i] = 0;
   }
   countDown();
   displayText("        ");
+  return 1;
 }
 
-void initTimeBandits() {
+uint8_t initTimeBandits() {
   while (readTM1638Buttons() & 128)
     ;
   goal = getUserCursorValue("TID", 10, 5, 7200) * 1000;
-  startGame();
+  return startGame();
 }
 
 static void aliveIndicator() {
-  if (0xF == (millis() & 0xF)) {
+  if (0x3F == (getTime() & 0x3F)) {
     uint8_t leds = nextRandom();
     displayBinary(leds);
   }
@@ -94,14 +102,14 @@ static void updateFlashes() {
   }
 }
 
-void doTimeBanditsLoop() {
+uint8_t doTimeBanditsLoop() {
   aliveIndicator();
-  displayNumber(millis() - startTime);
+  displayNumber(getTime() - startTime);
   updateFlashes();
   for (int i = 0; i < 4; i++) {
     if (playerTimes[i] == 0) {
       if (readPlayerButton(i)) {
-        playerTimes[i] = millis() - startTime;
+        playerTimes[i] = getTime() - startTime;
         flashPlayerLamp(i);
       }
     }
@@ -112,6 +120,14 @@ void doTimeBanditsLoop() {
     playWinSound();
     while (!checkDoubleClick()) {
     }
-    startGame();
+    if(!startGame()) {
+      return 1;
+    }
   }
+
+  if (isTM1638ButtonPressed(BUT_BACK)) {
+    return 1;
+  }
+
+  return 0;
 }

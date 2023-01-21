@@ -1,4 +1,4 @@
 #pragma once
 
-extern void initTimeBandits();
-extern void doTimeBanditsLoop();
+extern uint8_t initTimeBandits();
+extern uint8_t doTimeBanditsLoop();
