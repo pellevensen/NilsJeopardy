@@ -62,7 +62,7 @@ uint8_t initPsymon() {
   baseSpeed = 4000 / (speed * speed);
   buttons = getUserCursorValue("Btns", 4, 2, 4);
   timeOut = getUserCursorValue("TmOut", 2, 1, 10);
-  speedUp = getUserCursorValue("Faster", 0, 0, 10);
+  speedUp = getUserCursorValue("Faster", 0, 0, 10) * 2;
   speed = baseSpeed;
   return startGame();
 }
