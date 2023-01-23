@@ -1,5 +1,7 @@
+#include "math.h"
 #include <Arduino.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "time.h"
 #include "sounds.h"
 #include "random.h"
@@ -7,6 +9,7 @@
 #include "timebandits.h"
 
 static uint32_t startTime;
+static uint8_t players;
 static int32_t playerTimes[4];
 static int32_t goal;
 static uint16_t flashTimers[4];
@@ -24,11 +27,15 @@ static void countDown() {
   startTime = getTime() - noteMillis;
 }
 
+static uint8_t isControlPressed() {
+  return isTM1638ButtonPressed(BUT_BACK) || readGreenButton();
+}
+
 static uint8_t startGame() {
-  while(!isTM1638ButtonPressed(BUT_BACK) && !readGreenButton()) {
+  while (!isControlPressed()) {
     // Do nothing...
   }
-  if(isTM1638ButtonPressed(BUT_BACK)) {
+  if (isTM1638ButtonPressed(BUT_BACK)) {
     return 0;
   }
   waitForGreenFlank();
@@ -45,6 +52,8 @@ uint8_t initTimeBandits() {
   while (readTM1638Buttons() & 128)
     ;
   goal = getUserCursorValue("TID", 10, 5, 7200) * 1000;
+  players = getUserCursorValue("Spelare", 4, 2, 4);
+
   return startGame();
 }
 
@@ -60,19 +69,27 @@ static void flashRandomLights(uint16_t endPlayer, uint16_t min, uint16_t max, fl
     endPlayer++;
   }
   for (uint32_t x = (uint32_t)min << 8; x < (uint32_t)max << 8; x *= growth) {
-    lamp(endPlayer & 3, true);
-    playNoteNonBlocking(x * 4 % 24, x >> 8);
+    lamp(endPlayer % players, true);
+    playNoteNonBlocking(x * players % 24, x >> 8);
     timeDelay(x >> 8);
-    lamp(endPlayer & 3, false);
+    lamp(endPlayer % players, false);
     endPlayer--;
   }
+}
+
+static void displayTime(uint8_t playerIdx, int32_t t) {
+  char text[9] = "        ";
+  int decimals = max(0, 3 - log10((uint16_t) (abs(t) >> 16)));
+  dtostrf(t * 0.001, 9, decimals, text);
+  text[0] = '1' + playerIdx;
+  displayText(text);
 }
 
 static int displayWinner() {
   uint32_t bestEstimate = 1UL << 29;
   int bestPlayer = 0;
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < players; i++) {
     uint32_t diff = abs(goal - playerTimes[i]);
     if (diff < bestEstimate) {
       bestPlayer = i;
@@ -82,9 +99,6 @@ static int displayWinner() {
   lightsOut();
   flashRandomLights(bestPlayer, 15, 200, 1.05);
   lamp(bestPlayer, true);
-  char fs[10];
-  dtostrf((goal - playerTimes[bestPlayer]) * 0.001, 9, 2, fs);
-  displayText(fs);
 
   return bestPlayer;
 }
@@ -94,7 +108,7 @@ static void flashPlayerLamp(int p) {
 }
 
 static void updateFlashes() {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < players; i++) {
     if (flashTimers[i] != 0) {
       lamp(i, flashTimers[i] & (1UL << 5));
       flashTimers[i]--;
@@ -102,11 +116,30 @@ static void updateFlashes() {
   }
 }
 
+typedef struct {
+  uint8_t playerIdx;
+  int32_t score;
+} PlayerScore;
+
+static int cmpScores(const void* s1, const void* s2) {
+  int32_t sc1 = abs(((PlayerScore*)s1)->score);
+  int32_t sc2 = abs(((PlayerScore*)s2)->score);
+  return sc1 - sc2;
+}
+
+static void initPlayerScores(int32_t playerTimes[], PlayerScore* scores) {
+  for (int i = 0; i < players; i++) {
+    scores[i].playerIdx = i;
+    scores[i].score = goal - playerTimes[i];
+  }
+  qsort(scores, players, sizeof(PlayerScore), cmpScores);
+}
+
 uint8_t doTimeBanditsLoop() {
   aliveIndicator();
   displayNumber(getTime() - startTime);
   updateFlashes();
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < players; i++) {
     if (playerTimes[i] == 0) {
       if (readPlayerButton(i)) {
         playerTimes[i] = getTime() - startTime;
@@ -118,9 +151,27 @@ uint8_t doTimeBanditsLoop() {
     int winner = displayWinner();
     playPlayerSound(winner);
     playWinSound();
-    while (!checkDoubleClick()) {
+
+    PlayerScore scores[4];
+    initPlayerScores(playerTimes, scores);
+    uint8_t oldPlayerIdx = 0xFF;
+    uint8_t playerIdx = 0;
+    
+    while (!isControlPressed()) {
+      if (toggled(BUT_DOWN)) {
+        playerIdx = (playerIdx + players - 1) % players;
+      } else if (toggled(BUT_UP)) {
+        playerIdx = (playerIdx + 1) % players;
+      }
+      if (oldPlayerIdx != playerIdx) {
+        displayTime(scores[playerIdx].playerIdx, scores[playerIdx].score);
+        displayLEDScore(playerIdx);
+        oldPlayerIdx = playerIdx;
+      }
+      timeDelay(20);
     }
-    if(!startGame()) {
+
+    if (!startGame()) {
       return 1;
     }
   }

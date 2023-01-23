@@ -65,8 +65,18 @@ uint8_t readTM1638Buttons() {
   return tm.readButtons();
 }
 
-uint8_t isTM1638ButtonPressed(TM1638Buttons b) {
+uint8_t isTM1638ButtonPressed(TM1638Button b) {
   return readTM1638Buttons() & b;
+}
+
+uint8_t toggled(TM1638Button b) {
+  if (isTM1638ButtonPressed(b)) {
+    while (isTM1638ButtonPressed(b)) {
+      // Wait for release.
+    }
+    return 1;
+  }
+  return 0;
 }
 
 void lamp(uint8_t lampIdx, bool on) {
@@ -219,6 +229,11 @@ void displayBinary(uint8_t value) {
     tm.setLED(LEDposition, value & 1);
     value = value >> 1;
   }
+}
+
+void displayLEDScore(uint8_t playerIdx) {
+  const uint8_t LED_SCORES[4] = { 0xFF, 0x7E, 0x3C, 0x18 };
+  displayBinary(LED_SCORES[playerIdx]);  
 }
 
 uint8_t checkDoubleClick() {
