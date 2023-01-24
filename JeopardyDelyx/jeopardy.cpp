@@ -11,6 +11,7 @@
 
 static uint8_t activePlayer;
 static uint8_t canPlay;
+static uint8_t cursorPos;
 static uint8_t canReset;
 static uint8_t playerScores[4];
 static const uint8_t NO_PLAYER = 255;
@@ -46,6 +47,7 @@ uint8_t initJeopardy() {
   lightsOut();
   playWinSound();
   displayScores();
+  cursorPos = 1;
 
   return 1;
 }
@@ -72,6 +74,19 @@ uint8_t doJeopardyLoop() {
     resetGameCycle("Lose");
   }
   if (activePlayer == NO_PLAYER) {
+    if (toggled(BUT_LEFT)) {
+      cursorPos = (cursorPos + 6) & 7;
+    } else if (toggled(BUT_RIGHT)) {
+      cursorPos = (cursorPos + 2) & 7;
+    } else if (toggled(BUT_DOWN)) {
+      playerScores[cursorPos >> 1] = max(playerScores[cursorPos >> 1] - 1, 0);
+      displayScores();
+    } else if (toggled(BUT_UP)) {
+      playerScores[cursorPos >> 1]++;
+      displayScores();
+    }
+    displayBinary(1UL << cursorPos);
+
     for (int i = 0; i < 4; i++) {
       canPlay |= !readPlayerButton(i) << i;
     }
@@ -99,7 +114,7 @@ uint8_t doJeopardyLoop() {
     delay(50);
   }
 
-  if(isTM1638ButtonPressed(BUT_BACK)) {
+  if (isTM1638ButtonPressed(BUT_BACK)) {
     return 1;
   }
 
