@@ -2,6 +2,7 @@
 #include <TM1638plus.h>
 #include "random.h"
 #include "common.h"
+#include "time.h"
 #include "math.h"
 
 static const uint8_t STROBE_PIN = A1;  // strobe = GPIO connected to strobe line of module
@@ -211,7 +212,7 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
       }
       tm.displayIntNum(val, false, TMAlignTextRight);
       tm.displayText(text);
-      if ((millis() & 0x40) > 0x20) {
+      if ((getTime() & 0x40) > 0x20) {
         tm.display7Seg(7 - cursorPos, 1 << 7);
       }
     }
@@ -219,6 +220,9 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
   while (lastButtons == tm.readButtons()) {
     // Wait for release
   }
+
+  tm.displayIntNum(val, false, TMAlignTextRight);
+  tm.displayText(text);
 
   return val;
 }
@@ -232,7 +236,7 @@ void displayBinary(uint8_t value) {
 
 void displayLEDScore(uint8_t playerIdx) {
   const uint8_t LED_SCORES[4] = { 0xFF, 0x7E, 0x3C, 0x18 };
-  displayBinary(LED_SCORES[playerIdx]);  
+  displayBinary(LED_SCORES[playerIdx]);
 }
 
 uint8_t checkDoubleClick() {
@@ -240,17 +244,17 @@ uint8_t checkDoubleClick() {
   static uint8_t lastState = 0;
   static uint32_t lastHandled = 0;
 
-  if (millis() - lastHandled > 50) {
-    lastHandled = millis();
+  if (getTime() - lastHandled > 50) {
+    lastHandled = getTime();
     uint8_t redButton = readRedButton();
     if (lastState != redButton) {
       lastState = redButton;
       if (redButton == 0) {
-        if (millis() - lastClick < 1000) {
+        if (getTime() - lastClick < 1000) {
           lastClick = 0;
           return 1;
         }
-        lastClick = millis();
+        lastClick = getTime();
       }
     }
   }
