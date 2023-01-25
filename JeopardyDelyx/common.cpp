@@ -210,9 +210,10 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
       } else if (buttons & BUT_RIGHT) {
         cursorPos = (cursorPos - 1 + maxCursorPos) % maxCursorPos;
       }
+      
       tm.displayIntNum(val, false, TMAlignTextRight);
       tm.displayText(text);
-      if ((getTime() & 0x40) > 0x20) {
+      if ((getTime() & 0x100) > 0x80) {
         tm.display7Seg(7 - cursorPos, 1 << 7);
       }
     }
