@@ -1,7 +1,6 @@
 #include "math.h"
 #include <Arduino.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include "time.h"
 #include "sounds.h"
 #include "random.h"
@@ -125,10 +124,17 @@ typedef struct {
   int32_t score;
 } PlayerScore;
 
-static int cmpScores(const void* s1, const void* s2) {
-  int32_t sc1 = abs(((PlayerScore*)s1)->score);
-  int32_t sc2 = abs(((PlayerScore*)s2)->score);
-  return sc1 - sc2;
+static void sortPlayerScores(PlayerScore scores[]) {
+  for(int i = 1; i < players; i++) {
+    int j = i;
+    PlayerScore toInsert;
+    memcpy(&toInsert, &scores[j], sizeof(PlayerScore));
+    while(j > 0 && abs(toInsert.score) < abs(scores[j - 1].score)) {
+      memcpy(&scores[j], &scores[j - 1], sizeof(PlayerScore));
+      j--;
+    }
+    memcpy(&scores[j], &toInsert, sizeof(PlayerScore));
+  }  
 }
 
 static void initPlayerScores(int32_t playerTimes[], PlayerScore* scores) {
@@ -136,7 +142,7 @@ static void initPlayerScores(int32_t playerTimes[], PlayerScore* scores) {
     scores[i].playerIdx = i;
     scores[i].score = goal - playerTimes[i];
   }
-  qsort(scores, players, sizeof(PlayerScore), cmpScores);
+  sortPlayerScores(scores);
 }
 
 uint8_t doTimeBanditsLoop() {

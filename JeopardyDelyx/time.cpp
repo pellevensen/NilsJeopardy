@@ -32,7 +32,7 @@ void timeDelay(uint32_t t) {
 
 ISR(TIMER2_COMPB_vect) {
   TCNT2 = 0;
-  clock++;
+  clock += 1;
   if (clock == 0) {
     clockHi++;
   }
