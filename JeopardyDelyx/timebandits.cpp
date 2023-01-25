@@ -13,6 +13,7 @@ static uint8_t players;
 static int32_t playerTimes[4];
 static int32_t goal;
 static uint16_t flashTimers[4];
+static uint8_t completed;
 
 static void countDown() {
   for (int i = 0; i < 4; i++) {
@@ -31,6 +32,10 @@ static uint8_t isControlPressed() {
   return isTM1638ButtonPressed(BUT_BACK) || readGreenButton();
 }
 
+static void updateCompletedDisplay() {
+  displayBinary(completed);
+}
+
 static uint8_t startGame() {
   while (!isControlPressed()) {
     // Do nothing...
@@ -43,8 +48,14 @@ static uint8_t startGame() {
   for (int i = 0; i < 4; i++) {
     playerTimes[i] = 0;
   }
+
+  completed = ~((1 << (players * 2)) - 1);
+  Serial.println(completed);
+  updateCompletedDisplay();
+
   countDown();
   displayText("        ");
+
   return 1;
 }
 
@@ -55,13 +66,6 @@ uint8_t initTimeBandits() {
   players = getUserCursorValue("Spelare", 4, 2, 4);
 
   return startGame();
-}
-
-static void aliveIndicator() {
-  if (0x3F == (getTime() & 0x3F)) {
-    uint8_t leds = nextRandom();
-    displayBinary(leds);
-  }
 }
 
 static void flashRandomLights(uint16_t endPlayer, uint16_t min, uint16_t max, float growth) {
@@ -79,7 +83,7 @@ static void flashRandomLights(uint16_t endPlayer, uint16_t min, uint16_t max, fl
 
 static void displayTime(uint8_t playerIdx, int32_t t) {
   char text[9] = "        ";
-  int decimals = max(0, 3 - log10((uint16_t) (abs(t) >> 16)));
+  int decimals = max(0, 3 - log10((uint16_t)(abs(t) >> 16)));
   dtostrf(t * 0.001, 9, decimals, text);
   text[0] = '1' + playerIdx;
   displayText(text);
@@ -136,7 +140,6 @@ static void initPlayerScores(int32_t playerTimes[], PlayerScore* scores) {
 }
 
 uint8_t doTimeBanditsLoop() {
-  aliveIndicator();
   displayNumber(getTime() - startTime);
   updateFlashes();
   for (int i = 0; i < players; i++) {
@@ -144,6 +147,8 @@ uint8_t doTimeBanditsLoop() {
       if (readPlayerButton(i)) {
         playerTimes[i] = getTime() - startTime;
         flashPlayerLamp(i);
+        completed |= 3 << (2 * i);
+        updateCompletedDisplay();
       }
     }
   }
@@ -156,7 +161,7 @@ uint8_t doTimeBanditsLoop() {
     initPlayerScores(playerTimes, scores);
     uint8_t oldPlayerIdx = 0xFF;
     uint8_t playerIdx = 0;
-    
+
     while (!isControlPressed()) {
       if (toggled(BUT_DOWN)) {
         playerIdx = (playerIdx + players - 1) % players;

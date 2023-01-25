@@ -101,7 +101,6 @@ void lightsOut() {
   for (uint8_t i = 0; i < sizeof(LAMP_PINS); i++) {
     lamp(i, false);
   }
-  displayBinary(0);
 }
 
 void flashWinner(int p, int blinks) {

@@ -21,7 +21,7 @@ void startClock() {
 }
 
 uint32_t getTime() {
-  return (((uint32_t)clockHi << 30) | (clock >> 2)) * 0.99206349;
+  return (((uint32_t)clockHi << 30) | (clock >> 2)) * 0.990710061;
 }
 
 void timeDelay(uint32_t t) {

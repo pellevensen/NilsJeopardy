@@ -75,7 +75,6 @@ void setup() {
   Serial.begin(9600);
   initIO();
   startClock();
-
   playBootSound();
   uint8_t done = 0;
 
