@@ -73,16 +73,12 @@ void playMelody(uint8_t notes[], uint8_t durations[], int tempo) {
 }
 
 static void playerSound1() {
-  const uint16_t frequencies[5] = { 392, 440, 349, 175, 262 };
-
-  for (int l1 = 127; l1 < 255; l1 += 20) {
-    for (int lev = 0; lev < 20; lev += 25) {
-      for (uint8_t freq = 0; freq < 5; freq++) {
-        playTone(frequencies[freq] * 2 - lev, lev + l1, 10, false);
-      }
+  for (int foff = 10; foff < 1600; foff *= 2) {
+    for (int f = 1000; f > 200; f *= 0.9) {
+      playTone(f + foff, 255, 5, false);
     }
-    vol.delay(10);
   }
+
   soundOff();
 }
 
