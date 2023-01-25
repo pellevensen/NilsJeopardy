@@ -1,21 +1,25 @@
 #include <Arduino.h>
+#include "time.h"
 #include "random.h"
 
 static uint32_t initRandom();
 static uint32_t rngState = initRandom();
 
-static uint32_t initRandom() {
-  uint32_t x = 0;
-
-  for (int i = 0; i < 10; i++) {
-    for (int i = A0; i <= A6; i++) {
-      x += analogRead(i);
-      x *= 23456789;
-      x += micros();
-      x ^= x >> 16;
-    }
+static void mixEntropy(uint32_t x) {
+  for(int i = 0; i < 3; i++) {
+    rngState += x;
+    rngState *= 23456789;
+    rngState ^= rngState >> 16;
   }
-  rngState = x;
+}
+
+static uint32_t initRandom() {
+  mixEntropy(getTime());
+  for (int i = A0; i <= A6; i++) {
+      mixEntropy(analogRead(i));
+  }
+  mixEntropy(getTime());
+
   return rngState;
 }
 
