@@ -50,10 +50,7 @@ static InitStatus startGame() {
 
 InitStatus initPsymon() {
   int16_t tmpSpeed;
-  if ((tmpSpeed = getUserCursorValue("Speed", (MAX_SPEED + MIN_SPEED) / 2, MIN_SPEED, MAX_SPEED)) < 0 ||
-     (buttons = getUserCursorValue("Btns", 4, 2, 4)) < 0 ||
-     (timeOut = getUserCursorValue("TmOut", 2, 1, 10)) < 0 ||
-     (speedUp = getUserCursorValue("Faster", 0, 0, 10) * 2) < 0) {
+  if ((tmpSpeed = getUserCursorValue("Speed", (MAX_SPEED + MIN_SPEED) / 2, MIN_SPEED, MAX_SPEED)) < 0 || (buttons = getUserCursorValue("Btns", 4, 2, 4)) < 0 || (timeOut = getUserCursorValue("TmOut", 2, 1, 10)) < 0 || (speedUp = getUserCursorValue("Faster", 0, 0, 10) * 2) < 0) {
     return INIT_CANCEL;
   }
   tmpSpeed += 1;
@@ -91,7 +88,9 @@ static void playNotes() {
 }
 
 static void gameOver() {
+  rng = seed;
   playLoseSound();
+  playNotes();
   phase = PSYMON_GAME_OVER;
 }
 
@@ -112,16 +111,15 @@ LoopStatus doPsymonLoop() {
     for (uint8_t i = 0; i < 4; i++) {
       if (buttonsPressed & (1 << i)) {
         int buttonDown = i;
-        Serial.print("Button down: ");
-        Serial.println(getTime());
+        lastButtonPress = getTime();
+        Serial.print("lastButtonPress: ");
+        Serial.println(lastButtonPress);
         playerFlashAndSound(buttonDown);
 
         while (readPlayerButton(buttonDown)) {
           // Do nothing / wait for release.
           soundDelay();
         }
-        Serial.print("Button up: ");
-        Serial.println(getTime());
 
         uint32_t startTime = getTime();
         while (readPlayerButtons() == 0) {
@@ -130,14 +128,11 @@ LoopStatus doPsymonLoop() {
           }
         }
         noteOff();
-        lastButtonPress = getTime();
 
         lamp(buttonDown, false);
         uint8_t note = next32(&rng) % buttons;
         if (note != buttonDown) {
           gameOver();
-          rng = seed;
-          playNotes();
           break;
         }
         position++;
@@ -154,7 +149,7 @@ LoopStatus doPsymonLoop() {
       }
     }
 
-    if (getTime() - lastButtonPress > timeOut * 1000) {
+    if (phase == PSYMON_FOLLOW && getTime() - lastButtonPress > timeOut * 1000) {
       gameOver();
     }
   } else if (phase == PSYMON_GAME_OVER) {
