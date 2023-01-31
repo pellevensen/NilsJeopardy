@@ -140,6 +140,8 @@ uint8_t doPsymonLoop() {
         uint8_t note = next32(&rng) % buttons;
         if (note != buttonDown) {
           gameOver();
+          rng = seed;
+          playNotes();
           break;
         }
         position++;
