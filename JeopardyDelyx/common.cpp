@@ -47,6 +47,8 @@ GameType getGame(uint8_t gameIdx) {
       return TIME_BANDITS;
     case 2:
       return PSYMON;
+    case 3:
+      return NUMBUM;
   }
   Serial.print("Illegal game: ");
   Serial.println(gameIdx);
@@ -276,4 +278,21 @@ void displayNumber(uint32_t v) {
 void displayText(const char* text) {
   tm.displayText("        ");
   tm.displayText(text);
+}
+
+uint8_t selectString(const char* strings[], int size) {
+  uint8_t idx = 0;
+  uint8_t buttons = 0;
+  uint8_t games = getGames();
+  while (!(readTM1638Buttons() & BUT_OK)) {
+    displayText(strings[idx]);
+    waitForTM1638Flank();
+    buttons = readTM1638Buttons();
+    if (buttons & BUT_DOWN) {
+      idx = (idx + size - 1) % size;
+    } else if (buttons & BUT_UP) {
+      idx = (idx + 1) % size;
+    }
+  }
+  return idx;
 }

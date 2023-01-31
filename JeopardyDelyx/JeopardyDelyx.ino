@@ -19,19 +19,11 @@
 static GameType currentGame;
 
 static GameType selectGame() {
-  uint8_t gameIdx = 0;
-  uint8_t buttons = 0;
-  uint8_t games = getGames();
-  while (!(readTM1638Buttons() & 128)) {
-    displayText(getGameName(gameIdx));
-    waitForTM1638Flank();
-    buttons = readTM1638Buttons();
-    if (buttons & BUT_DOWN) {
-      gameIdx = (gameIdx + games - 1) % games;
-    } else if (buttons & BUT_UP) {
-      gameIdx = (gameIdx + 1) % games;
-    }
+  const char* gameNames[getGames()];
+  for (int i = 0; i < getGames(); i++) {
+    gameNames[i] = getGameName(i);
   }
+  uint8_t gameIdx = selectString(gameNames, getGames());
   return getGame(gameIdx);
 }
 

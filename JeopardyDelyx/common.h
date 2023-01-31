@@ -46,3 +46,5 @@ extern void waitForTM1638Flank();
 extern uint8_t isTM1638ButtonPressed(TM1638Button b);
 extern uint8_t toggled(TM1638Button b);
 extern uint8_t checkDoubleClick();
+
+uint8_t selectString(const char* strings[], int size);
