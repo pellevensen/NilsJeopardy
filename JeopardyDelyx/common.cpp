@@ -17,9 +17,16 @@ static const uint8_t AUDIO_PIN = 6;
 #define STEP_DELAY 200000
 #define MAX_GAME_DESCRIPTOR 9
 
-static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "JPRDY", "TIMEBAND", "PSYMON" };
+static char GAME_NAMES[][MAX_GAME_DESCRIPTOR] = { "JPRDY", "TIMEBAND", "PSYMON", "NUMBUM" };
 
 static TM1638plus tm(STROBE_PIN, CLOCK_PIN, DIO_PIN, false);
+
+void waitForTM1638Flank() {
+  uint8_t buttons = readTM1638Buttons();
+  while (buttons == readTM1638Buttons()) {
+    // Wait until some button pressed.
+  }
+}
 
 const char* getGameName(uint8_t gameIdx) {
   if (gameIdx <= getGames()) {
@@ -210,7 +217,7 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
       } else if (buttons & BUT_RIGHT) {
         cursorPos = (cursorPos - 1 + maxCursorPos) % maxCursorPos;
       }
-      
+
       tm.displayIntNum(val, false, TMAlignTextRight);
       tm.displayText(text);
       if ((getTime() & 0x100) > 0x80) {

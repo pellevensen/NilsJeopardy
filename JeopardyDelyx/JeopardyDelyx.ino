@@ -4,6 +4,7 @@
 #include "jeopardy.h"
 #include "timebandits.h"
 #include "psymon.h"
+#include "numbum.h"
 #include "common.h"
 #include "sounds.h"
 #include "time.h"
@@ -23,13 +24,11 @@ static GameType selectGame() {
   uint8_t games = getGames();
   while (!(readTM1638Buttons() & 128)) {
     displayText(getGameName(gameIdx));
-    while (buttons == readTM1638Buttons()) {
-      // Wait until some button pressed.
-    }
+    waitForTM1638Flank();
     buttons = readTM1638Buttons();
-    if (buttons & 1) {
+    if (buttons & BUT_DOWN) {
       gameIdx = (gameIdx + games - 1) % games;
-    } else if (buttons & 2) {
+    } else if (buttons & BUT_UP) {
       gameIdx = (gameIdx + 1) % games;
     }
   }
@@ -82,6 +81,8 @@ void setup() {
     currentGame = waitForStart();
     Serial.print("Game chosen: ");
     Serial.println(currentGame);
+    while (readTM1638Buttons() & 128)
+      ;
     switch (currentGame) {
       case JEOPARDY:
         done = initJeopardy();
@@ -91,6 +92,9 @@ void setup() {
         break;
       case PSYMON:
         done = initPsymon();
+        break;
+      case NUMBUM:
+        done = initNumBum();
         break;
       default:
         Serial.println("Failed setup; no game type chosen; this should never happen.");
@@ -110,6 +114,9 @@ void loop() {
       break;
     case PSYMON:
       done = doPsymonLoop();
+      break;
+    case NUMBUM:
+      done = doNumBumLoop();
       break;
     default:
       Serial.println("No game type chosen; this should never happen.");

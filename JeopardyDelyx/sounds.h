@@ -11,6 +11,8 @@ extern uint16_t playNoteNonBlocking(uint8_t note, uint16_t duration);
 extern void noteOff();
 extern void soundDelay();
 extern void playPlayerSound(int player);
+extern void playStandardNote(uint8_t number, uint16_t duration);
+extern void playStandardNoteNonBlocking(uint8_t number, uint16_t duration);
 extern void playWinSound();
 extern void playLoseSound();
 extern void playBootSound();

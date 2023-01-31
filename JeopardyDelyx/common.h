@@ -6,7 +6,8 @@ typedef enum {
   NO_GAME = -1,
   JEOPARDY = 0,
   TIME_BANDITS = 1,
-  PSYMON = 2
+  PSYMON = 2,
+  NUMBUM = 3
 } GameType;
 
 typedef enum {
@@ -41,6 +42,7 @@ extern void displayText(const char* text);
 extern void displayBinary(uint8_t value);
 void displayLEDScore(uint8_t playerIdx);
 extern uint8_t readTM1638Buttons();
+extern void waitForTM1638Flank();
 extern uint8_t isTM1638ButtonPressed(TM1638Button b);
 extern uint8_t toggled(TM1638Button b);
 extern uint8_t checkDoubleClick();

@@ -24,13 +24,6 @@ static uint16_t position;
 static PsymonPhase phase;
 static uint32_t rng;
 
-#define NOTE1 4
-#define NOTE2 13
-#define NOTE3 9
-#define NOTE4 16
-
-static const uint8_t NOTES[] = { NOTE1, NOTE2, NOTE3, NOTE4 };
-
 static uint8_t startGame() {
   while (!isTM1638ButtonPressed(BUT_BACK) && !readGreenButton()) {
     // Do nothing...
@@ -56,8 +49,6 @@ static uint8_t startGame() {
 #define MIN_DELAY 50
 
 uint8_t initPsymon() {
-  while (readTM1638Buttons() & 128)
-    ;
   speed = getUserCursorValue("Speed", (MAX_SPEED + MIN_SPEED) / 2, MIN_SPEED, MAX_SPEED) + 1;
   baseSpeed = 4000 / (speed * speed);
   buttons = getUserCursorValue("Btns", 4, 2, 4);
@@ -76,15 +67,15 @@ static uint16_t soundDuration(int speed) {
   return speed;
 }
 
-static void flashAndSound(uint8_t button) {
+void flashAndSound(uint8_t button) {
   lamp(button, true);
-  playNote(NOTES[button], soundDuration(speed));
+  playStandardNote(button, soundDuration(speed));
   lamp(button, false);
 }
 
 static void playerFlashAndSound(uint8_t button) {
   lamp(button, true);
-  playNoteNonBlocking(NOTES[button], soundDuration(speed));
+  playStandardNoteNonBlocking(button, soundDuration(speed));
 }
 
 static void playNotes() {

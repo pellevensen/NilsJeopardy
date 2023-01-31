@@ -5,8 +5,23 @@
 
 #define AUDIO_PIN 6
 
+#define NOTE1 4
+#define NOTE2 13
+#define NOTE3 9
+#define NOTE4 16
+
+static const uint8_t NOTES[] = { NOTE1, NOTE2, NOTE3, NOTE4 };
+
 static Volume vol;
 static boolean initialized = 0;
+
+void playStandardNote(uint8_t number, uint16_t duration) {
+  playNote(NOTES[number], duration);
+}
+
+void playStandardNoteNonBlocking(uint8_t number, uint16_t duration) {
+  playNoteNonBlocking(NOTES[number], duration);
+}
 
 static void playTone(uint16_t frequency, uint8_t volume, uint16_t duration, bool turnOff) {
   if (!initialized) {

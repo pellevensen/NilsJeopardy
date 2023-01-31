@@ -59,8 +59,6 @@ static uint8_t startGame() {
 }
 
 uint8_t initTimeBandits() {
-  while (readTM1638Buttons() & 128)
-    ;
   goal = getUserCursorValue("TID", 10, 5, 7200) * 1000;
   players = getUserCursorValue("Spelare", 4, 2, 4);
 
@@ -125,16 +123,16 @@ typedef struct {
 } PlayerScore;
 
 static void sortPlayerScores(PlayerScore scores[]) {
-  for(int i = 1; i < players; i++) {
+  for (int i = 1; i < players; i++) {
     int j = i;
     PlayerScore toInsert;
     memcpy(&toInsert, &scores[j], sizeof(PlayerScore));
-    while(j > 0 && abs(toInsert.score) < abs(scores[j - 1].score)) {
+    while (j > 0 && abs(toInsert.score) < abs(scores[j - 1].score)) {
       memcpy(&scores[j], &scores[j - 1], sizeof(PlayerScore));
       j--;
     }
     memcpy(&scores[j], &toInsert, sizeof(PlayerScore));
-  }  
+  }
 }
 
 static void initPlayerScores(int32_t playerTimes[], PlayerScore* scores) {
@@ -188,6 +186,7 @@ uint8_t doTimeBanditsLoop() {
   }
 
   if (isTM1638ButtonPressed(BUT_BACK)) {
+    waitForTM1638Flank();
     return 1;
   }
 

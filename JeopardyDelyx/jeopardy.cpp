@@ -115,6 +115,7 @@ uint8_t doJeopardyLoop() {
   }
 
   if (isTM1638ButtonPressed(BUT_BACK)) {
+    waitForTM1638Flank();
     return 1;
   }
 
