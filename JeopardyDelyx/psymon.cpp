@@ -12,24 +12,24 @@ typedef enum {
   PSYMON_GAME_OVER = 2,
 } PsymonPhase;
 
-static uint16_t timeOut;
+static int16_t timeOut;
 static uint32_t lastButtonPress;
 static int32_t seed;
-static uint16_t baseSpeed;
+static int16_t baseSpeed;
 static uint16_t speed;
-static uint8_t speedUp;
-static uint8_t buttons;
+static int8_t speedUp;
+static int8_t buttons;
 static uint16_t length;
 static uint16_t position;
 static PsymonPhase phase;
 static uint32_t rng;
 
-static uint8_t startGame() {
+static InitStatus startGame() {
   while (!isTM1638ButtonPressed(BUT_BACK) && !readGreenButton()) {
     // Do nothing...
   }
   if (isTM1638ButtonPressed(BUT_BACK)) {
-    return 0;
+    return INIT_CANCEL;
   }
   waitForGreenFlank();
   displayText("        ");
@@ -41,20 +41,25 @@ static uint8_t startGame() {
   rng = seed;
   speed = baseSpeed;
   position = 0;
-  return 1;
+  return INIT_OK;
 }
 
 #define MAX_SPEED 5
 #define MIN_SPEED 1
 #define MIN_DELAY 50
 
-uint8_t initPsymon() {
-  speed = getUserCursorValue("Speed", (MAX_SPEED + MIN_SPEED) / 2, MIN_SPEED, MAX_SPEED) + 1;
-  baseSpeed = 4000 / (speed * speed);
-  buttons = getUserCursorValue("Btns", 4, 2, 4);
-  timeOut = getUserCursorValue("TmOut", 2, 1, 10);
-  speedUp = getUserCursorValue("Faster", 0, 0, 10) * 2;
+InitStatus initPsymon() {
+  int16_t tmpSpeed;
+  if ((tmpSpeed = getUserCursorValue("Speed", (MAX_SPEED + MIN_SPEED) / 2, MIN_SPEED, MAX_SPEED)) < 0 ||
+     (buttons = getUserCursorValue("Btns", 4, 2, 4)) < 0 ||
+     (timeOut = getUserCursorValue("TmOut", 2, 1, 10)) < 0 ||
+     (speedUp = getUserCursorValue("Faster", 0, 0, 10) * 2) < 0) {
+    return INIT_CANCEL;
+  }
+  tmpSpeed += 1;
+  baseSpeed = 4000 / (tmpSpeed * tmpSpeed);
   speed = baseSpeed;
+
   return startGame();
 }
 
@@ -90,7 +95,7 @@ static void gameOver() {
   phase = PSYMON_GAME_OVER;
 }
 
-uint8_t doPsymonLoop() {
+LoopStatus doPsymonLoop() {
   static uint32_t lastNoteTimestamp = 0;
   if (getTime() > lastNoteTimestamp + 1000) {
     noteOff();
@@ -153,10 +158,10 @@ uint8_t doPsymonLoop() {
       gameOver();
     }
   } else if (phase == PSYMON_GAME_OVER) {
-    if (!startGame()) {
-      return 1;
+    if (startGame() == INIT_CANCEL) {
+      return LOOP_CANCELED;
     }
   }
 
-  return 0;
+  return LOOP_RUNNING;
 }

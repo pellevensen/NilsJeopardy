@@ -20,6 +20,17 @@ typedef enum {
   BUT_RIGHT = 8
 } TM1638Button;
 
+typedef enum {
+  INIT_WAITING,
+  INIT_OK,
+  INIT_CANCEL
+} InitStatus;
+
+typedef enum {
+  LOOP_RUNNING,
+  LOOP_CANCELED
+} LoopStatus;
+
 extern const char* getGameName(uint8_t gameIdx);
 extern uint8_t getGames();
 extern GameType getGame(uint8_t gameIdx);
@@ -36,7 +47,7 @@ extern uint8_t readPlayerButton(uint8_t playerIdx);
 extern uint8_t readPlayerButtons();
 
 // extern uint16_t getUserValue(const char* text, uint16_t min, uint16_t max);
-extern uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max);
+extern int16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max);
 extern void displayNumber(uint32_t v);
 extern void displayText(const char* text);
 extern void displayBinary(uint8_t value);
@@ -47,4 +58,4 @@ extern uint8_t isTM1638ButtonPressed(TM1638Button b);
 extern uint8_t toggled(TM1638Button b);
 extern uint8_t checkDoubleClick();
 
-uint8_t selectString(const char* strings[], int size);
+int8_t selectString(const char* strings[], int size);

@@ -8,7 +8,7 @@
 #include "timebandits.h"
 
 static uint32_t startTime;
-static uint8_t players;
+static int8_t players;
 static int32_t playerTimes[4];
 static int32_t goal;
 static uint16_t flashTimers[4];
@@ -35,12 +35,12 @@ static void updateCompletedDisplay() {
   displayBinary(completed);
 }
 
-static uint8_t startGame() {
+static InitStatus startGame() {
   while (!isControlPressed()) {
     // Do nothing...
   }
   if (isTM1638ButtonPressed(BUT_BACK)) {
-    return 0;
+    return INIT_CANCEL;
   }
   waitForGreenFlank();
 
@@ -55,13 +55,13 @@ static uint8_t startGame() {
   countDown();
   displayText("        ");
 
-  return 1;
+  return INIT_OK;
 }
 
-uint8_t initTimeBandits() {
-  goal = getUserCursorValue("TID", 10, 5, 7200) * 1000;
-  players = getUserCursorValue("Spelare", 4, 2, 4);
-
+InitStatus initTimeBandits() {
+  if ((goal = getUserCursorValue("TID", 10, 5, 7200) * 1000) < 0 || (players = getUserCursorValue("Spelare", 4, 2, 4)) < 0) {
+    return INIT_CANCEL;
+  }
   return startGame();
 }
 
@@ -143,7 +143,7 @@ static void initPlayerScores(int32_t playerTimes[], PlayerScore* scores) {
   sortPlayerScores(scores);
 }
 
-uint8_t doTimeBanditsLoop() {
+LoopStatus doTimeBanditsLoop() {
   displayNumber(getTime() - startTime);
   updateFlashes();
   for (int i = 0; i < players; i++) {
@@ -181,14 +181,14 @@ uint8_t doTimeBanditsLoop() {
     }
 
     if (!startGame()) {
-      return 1;
+      return LOOP_CANCELED;
     }
   }
 
   if (isTM1638ButtonPressed(BUT_BACK)) {
     waitForTM1638Flank();
-    return 1;
+    return LOOP_CANCELED;
   }
 
-  return 0;
+  return LOOP_RUNNING;
 }

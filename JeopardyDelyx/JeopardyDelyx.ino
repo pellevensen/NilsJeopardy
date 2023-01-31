@@ -63,35 +63,42 @@ static GameType waitForStart() {
 }
 
 void setup() {
-  Serial.begin(9600);
-  initIO();
-  startClock();
-  playBootSound();
-  uint8_t done = 0;
+  uint8_t done = INIT_WAITING;
+  while (done == INIT_WAITING) {
+    Serial.begin(9600);
+    initIO();
+    startClock();
+    playBootSound();
+    displayText("        ");
 
-  while (!done) {
-    currentGame = waitForStart();
-    Serial.print("Game chosen: ");
-    Serial.println(currentGame);
-    while (readTM1638Buttons() & 128)
-      ;
-    switch (currentGame) {
-      case JEOPARDY:
-        done = initJeopardy();
-        break;
-      case TIME_BANDITS:
-        done = initTimeBandits();
-        break;
-      case PSYMON:
-        done = initPsymon();
-        break;
-      case NUMBUM:
-        done = initNumBum();
-        break;
-      default:
-        Serial.println("Failed setup; no game type chosen; this should never happen.");
+    while (done == INIT_WAITING) {
+      currentGame = waitForStart();
+      Serial.print("Game chosen: ");
+      Serial.println(currentGame);
+      while (readTM1638Buttons() & 128)
+        ;
+      switch (currentGame) {
+        case JEOPARDY:
+          done = initJeopardy();
+          break;
+        case TIME_BANDITS:
+          done = initTimeBandits();
+          break;
+        case PSYMON:
+          done = initPsymon();
+          break;
+        case NUMBUM:
+          done = initNumBum();
+          break;
+        default:
+          Serial.println("Failed setup; no game type chosen; this should never happen.");
+      }
+      lightsOut();
     }
-    lightsOut();
+
+    if (done == INIT_CANCEL) {
+      done = INIT_WAITING;
+    }
   }
 }
 

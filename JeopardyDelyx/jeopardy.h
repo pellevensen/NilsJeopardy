@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <stdint.h>
+#include "common.h"
 
-extern uint8_t initJeopardy();
-extern uint8_t doJeopardyLoop();
+extern InitStatus initJeopardy();
+extern LoopStatus doJeopardyLoop();

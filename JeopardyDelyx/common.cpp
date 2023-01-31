@@ -186,7 +186,7 @@ uint16_t getUserValue(const char* text, uint16_t dflt, uint16_t min, uint16_t ma
 }
 #endif
 
-uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max) {
+int16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint16_t max) {
   uint16_t val = dflt;
   uint8_t lastButtons = 255;
   uint32_t lastActionTimeStamp = 0;
@@ -218,6 +218,12 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
         cursorPos = (cursorPos + 1) % maxCursorPos;
       } else if (buttons & BUT_RIGHT) {
         cursorPos = (cursorPos - 1 + maxCursorPos) % maxCursorPos;
+      } else if (buttons & BUT_BACK) {
+        waitForTM1638Flank();
+        Serial.print("getUserCursorValue CANCEL");
+        Serial.println(val);
+
+        return -1;
       }
 
       tm.displayIntNum(val, false, TMAlignTextRight);
@@ -227,12 +233,13 @@ uint16_t getUserCursorValue(const char* text, uint16_t dflt, uint16_t min, uint1
       }
     }
   }
-  while (lastButtons == tm.readButtons()) {
-    // Wait for release
-  }
+  waitForTM1638Flank();
 
   tm.displayIntNum(val, false, TMAlignTextRight);
   tm.displayText(text);
+
+  Serial.print("getUserCursorValue");
+  Serial.println(val);
 
   return val;
 }
@@ -280,7 +287,7 @@ void displayText(const char* text) {
   tm.displayText(text);
 }
 
-uint8_t selectString(const char* strings[], int size) {
+int8_t selectString(const char* strings[], int size) {
   uint8_t idx = 0;
   uint8_t buttons = 0;
   uint8_t games = getGames();
@@ -292,6 +299,10 @@ uint8_t selectString(const char* strings[], int size) {
       idx = (idx + size - 1) % size;
     } else if (buttons & BUT_UP) {
       idx = (idx + 1) % size;
+    }
+    if (buttons & BUT_BACK) {
+      waitForTM1638Flank();
+      return -1;
     }
   }
   return idx;

@@ -4,27 +4,38 @@
 #include "numbum.h"
 
 typedef enum {
-  NB_MISMATCH,
-  NB_SINGLE,
-  NB_DOUBLE
+  NB_MISMATCH = 0,
+  NB_SINGLE = 1,
+  NB_DOUBLE = 2
 } NumBumMode;
 
 static uint32_t rngState;
+static NumBumMode mode;
 
+static NumBumMode idxToMode(int8_t idx) {
+  NumBumMode modes[] = {NB_MISMATCH, NB_SINGLE, NB_DOUBLE};
+  return modes[idx];
+}
 
-uint8_t initNumBum() {
+InitStatus initNumBum() {
+  const char* modeNames[] = { "MISMATCH", "SINGLE", "DOUBLE" };
+  int modeIdx = selectString(modeNames, 3);
+  mode = idxToMode(modeIdx);
+  if (modeIdx < 0) {
+    return INIT_CANCEL;
+  }
   // goal = getUserCursorValue("TID", 10, 5, 7200) * 1000;
   //players = getUserCursorValue("Spelare", 4, 2, 4);
 
-  return 1;
+  return INIT_OK;
   //return startGame();
 }
 
-uint8_t doNumBumLoop() {
+LoopStatus doNumBumLoop() {
   for (int i = 0; i < 4; i++) {
     playStandardNote(i, 1000);
   }
-  Serial.println("numBumLoop");  
+  Serial.println("numBumLoop");
 #if 0
   static uint32_t lastNoteTimestamp = 0;
   if (getTime() > lastNoteTimestamp + 1000) {
@@ -93,8 +104,8 @@ uint8_t doNumBumLoop() {
     }
   }
 #endif
-  if(readTM1638Buttons() & BUT_BACK) {
-    return 1;
+  if (readTM1638Buttons() & BUT_BACK) {
+    return LOOP_CANCELED;
   }
-  return 0;
+  return LOOP_RUNNING;
 }

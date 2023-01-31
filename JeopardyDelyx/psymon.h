@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <stdint.h>
+#include "common.h"
 
-extern uint8_t initPsymon();
-extern uint8_t doPsymonLoop();
+extern InitStatus initPsymon();
+extern LoopStatus doPsymonLoop();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "common.h"
 
-extern uint8_t initNumBum();
-extern uint8_t doNumBumLoop();
+extern InitStatus initNumBum();
+extern LoopStatus doNumBumLoop();

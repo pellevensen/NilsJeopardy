@@ -37,7 +37,7 @@ static void resetGameCycle(const char msg[]) {
   Serial.println(msg);
 }
 
-uint8_t initJeopardy() {
+InitStatus initJeopardy() {
   activePlayer = NO_PLAYER;
   canPlay = 0;
   canReset = 0;
@@ -49,7 +49,7 @@ uint8_t initJeopardy() {
   displayScores();
   cursorPos = 1;
 
-  return 1;
+  return INIT_OK;
 }
 
 static void insertNumber(char* textScores, uint8_t playerScore, int position) {
@@ -68,7 +68,7 @@ static void displayScores() {
   displayText(textScores);
 }
 
-uint8_t doJeopardyLoop() {
+LoopStatus doJeopardyLoop() {
   if (checkDoubleClick()) {
     playLoseSound();
     resetGameCycle("Lose");
@@ -116,8 +116,8 @@ uint8_t doJeopardyLoop() {
 
   if (isTM1638ButtonPressed(BUT_BACK)) {
     waitForTM1638Flank();
-    return 1;
+    return LOOP_CANCELED;
   }
 
-  return 0;
+  return LOOP_RUNNING;
 }

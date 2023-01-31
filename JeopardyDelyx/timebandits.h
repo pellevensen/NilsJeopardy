@@ -1,4 +1,6 @@
 #pragma once
 
-extern uint8_t initTimeBandits();
-extern uint8_t doTimeBanditsLoop();
+#include "common.h"
+
+extern InitStatus initTimeBandits();
+extern LoopStatus doTimeBanditsLoop();
